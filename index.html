@@ -1,0 +1,2652 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>เรียกสติ — Life Reset</title>
+<meta name="description" content="Prototype: AI เพื่อนช่วยคิด ที่ช่วยดึงสติและจัดลำดับปัญหาหลายเรื่องทีละขั้นตอน">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --kraft:#C9A66B; --kraft-dark:#A9834F;
+    --cream:#F5EEDD; --cream-2:#ECDFC0;
+    --coral:#D97B5F; --coral-dark:#BD6247; --coral-solid:#B8532F;
+    --ink:#3A3530; --ink-soft:#7A6E5E; --ink-faint:#A79A85;
+    --paper:#FBF6EA; --paper-2:#F3ECDA;
+    --line:#E1D2AE;
+    --safe:#5C7A5E; --safe-bg:#E3ECDF;
+    --shadow-note: 0 3px 0 rgba(58,53,48,0.06), 0 10px 18px -8px rgba(58,53,48,0.35);
+    --shadow-pop: 0 18px 40px -12px rgba(40,32,20,0.45);
+    --shadow-btn: 0 8px 18px -6px rgba(184,83,47,0.45);
+    --font-ui:'IBM Plex Sans Thai', system-ui, -apple-system, sans-serif;
+    --font-hand:'Mali', var(--font-ui);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    color-scheme: light;
+  }
+  :root:not([data-theme="light"]) { }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --kraft:#8C6B3D; --kraft-dark:#6E5330;
+      --cream:#221A11; --cream-2:#2B2116;
+      --coral:#E2896A; --coral-dark:#D0754F; --coral-solid:#B8532F;
+      --ink:#EFE4D2; --ink-soft:#C7B89E; --ink-faint:#9A8A6E;
+      --paper:#2C2216; --paper-2:#352A1B;
+      --line:#4A3A24;
+      --safe:#9BC49E; --safe-bg:#28331F;
+      --shadow-note: 0 3px 0 rgba(0,0,0,0.25), 0 10px 22px -8px rgba(0,0,0,0.6);
+      --shadow-pop: 0 18px 40px -12px rgba(0,0,0,0.7);
+      --shadow-btn: 0 8px 18px -6px rgba(0,0,0,0.55);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --kraft:#8C6B3D; --kraft-dark:#6E5330;
+    --cream:#221A11; --cream-2:#2B2116;
+    --coral:#E2896A; --coral-dark:#D0754F; --coral-solid:#B8532F;
+    --ink:#EFE4D2; --ink-soft:#C7B89E; --ink-faint:#9A8A6E;
+    --paper:#2C2216; --paper-2:#352A1B;
+    --line:#4A3A24;
+    --safe:#9BC49E; --safe-bg:#28331F;
+    --shadow-note: 0 3px 0 rgba(0,0,0,0.25), 0 10px 22px -8px rgba(0,0,0,0.6);
+    --shadow-pop: 0 18px 40px -12px rgba(0,0,0,0.7);
+    --shadow-btn: 0 8px 18px -6px rgba(0,0,0,0.55);
+    color-scheme: dark;
+  }
+  /* Alt color theme: mint board + sky-blue accent, same corkboard-note world. Light-only for now. */
+  :root[data-color-theme="mint"]{
+    --kraft:#8FC7B8; --kraft-dark:#5FA391;
+    --cream:#F3FAF7; --cream-2:#E6F3EE;
+    --coral:#5B9BD5; --coral-dark:#2F6B92; --coral-solid:#2C5F8A;
+    --ink:#2E3B38; --ink-soft:#5C716C; --ink-faint:#8FA39D;
+    --paper:#FDFFFE; --paper-2:#EEF7F4;
+    --line:#D7E8E2;
+    --safe:#5C7A5E; --safe-bg:#E3ECDF;
+    --shadow-note: 0 3px 0 rgba(46,59,56,0.06), 0 10px 18px -8px rgba(46,59,56,0.3);
+    --shadow-pop: 0 18px 40px -12px rgba(46,59,56,0.4);
+    --shadow-btn: 0 8px 18px -6px rgba(44,95,138,0.4);
+    color-scheme: light;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font-ui);
+    background:
+      radial-gradient(1200px 800px at 15% -10%, color-mix(in srgb, var(--coral) 10%, transparent), transparent 60%),
+      var(--cream-2);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+  button, input, textarea{font-family:inherit; color:inherit;}
+  button{cursor:pointer;}
+
+  /* ---------- App shell ---------- */
+  html, body{ height:100%; }
+  #stage{
+    width:100%;
+    max-width:430px;
+    height:100vh;
+    height:100dvh;
+    background:var(--cream);
+    position:relative;
+    overflow:clip;
+    display:flex;
+    flex-direction:column;
+  }
+  @media (min-width:560px){
+    body{ padding:32px 16px; background:
+        radial-gradient(1000px 700px at 20% 0%, color-mix(in srgb, var(--coral) 14%, transparent), transparent 55%),
+        radial-gradient(1400px 900px at 85% 110%, color-mix(in srgb, var(--kraft-dark) 35%, transparent), transparent 60%),
+        var(--kraft);
+    }
+    #stage{
+      height:min(844px, 96vh);
+      border-radius:34px;
+      box-shadow:var(--shadow-pop), 0 0 0 10px rgba(0,0,0,0.12);
+      border:1px solid rgba(0,0,0,0.15);
+    }
+  }
+
+  .screen{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    opacity:0; pointer-events:none;
+    transform:translateY(6px);
+    transition:opacity .28s ease, transform .28s ease;
+  }
+  .screen.active{ opacity:1; pointer-events:auto; transform:none; position:relative; flex:1; min-height:0; }
+
+  #appwrap{ flex:1; display:flex; flex-direction:column; position:relative; min-height:0; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    padding:calc(14px + var(--safe-top)) 18px 12px;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px;
+    background:var(--cream);
+    border-bottom:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .topbar h1{ font-size:17px; margin:0; font-weight:700; letter-spacing:.2px; }
+  .topbar .sub{ font-size:12px; color:var(--ink-soft); margin-top:1px; }
+  .usage-pill{
+    display:flex; align-items:center; gap:6px;
+    background:var(--paper-2); border:1px solid var(--line);
+    padding:6px 10px; border-radius:999px; font-size:12px; font-weight:600;
+    color:var(--ink-soft);
+  }
+  .usage-pill svg{ width:13px; height:13px; }
+  .icon-btn{
+    width:36px; height:36px; border-radius:50%;
+    border:1px solid var(--line); background:var(--paper-2);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .icon-btn svg{ width:18px; height:18px; }
+
+  /* ---------- Bottom nav ---------- */
+  .bottomnav{
+    display:flex; border-top:1px solid var(--line);
+    background:var(--cream);
+    padding:6px 6px calc(6px + var(--safe-bottom));
+    flex-shrink:0;
+  }
+  .navbtn{
+    flex:1; background:none; border:none; display:flex; flex-direction:column;
+    align-items:center; gap:3px; padding:6px 2px; border-radius:12px;
+    color:var(--ink-faint); font-size:11.5px; font-weight:600;
+  }
+  .navbtn svg{ width:21px; height:21px; }
+  .navbtn.active{ color:var(--coral-dark); background:color-mix(in srgb, var(--coral) 12%, transparent); }
+  .navbtn .dot{ width:5px; height:5px; border-radius:50%; background:var(--coral); position:absolute; margin-top:-24px; margin-left:14px; }
+
+  /* ---------- Scroll areas ---------- */
+  .scroll{ flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .pad{ padding:16px 18px 28px; }
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border-radius:12px; border:none; padding:13px 18px;
+    font-weight:700; font-size:14.5px; width:100%;
+    transition:transform .12s ease, filter .15s ease;
+  }
+  .btn:active{ transform:scale(.98); }
+  .btn-primary{ background:var(--coral-solid); color:#fff; box-shadow:var(--shadow-btn); }
+  .btn-primary:hover{ filter:brightness(1.04); }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); border:1px solid var(--line); }
+  .btn-quiet{ background:var(--paper-2); color:var(--ink); border:1px solid var(--line); }
+  .btn-sm{ width:auto; padding:9px 14px; font-size:13px; border-radius:10px; }
+  .btn-danger{ background:transparent; color:#B4503A; border:1px solid #E2C3B4; }
+
+  /* ============ ONBOARDING ============ */
+  #onboarding{
+    position:absolute; inset:0; z-index:50; background:var(--cream);
+    display:flex; flex-direction:column;
+  }
+  .ob-slide{ flex:1; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:32px 30px calc(20px + var(--safe-bottom)); }
+  .ob-slide.active{ display:flex; }
+  .ob-badge{
+    width:84px; height:84px; border-radius:50%;
+    background:var(--paper); border:2px solid var(--coral);
+    display:flex; align-items:center; justify-content:center; margin-bottom:22px;
+    box-shadow:var(--shadow-note);
+  }
+  .ob-badge svg{ width:38px; height:38px; }
+  .ob-slide h2{ font-family:var(--font-hand); font-size:24px; margin:0 0 12px; line-height:1.4; }
+  .ob-slide p{ font-size:14.5px; line-height:1.75; color:var(--ink-soft); margin:0; max-width:320px; }
+  .ob-dots{ display:flex; gap:6px; justify-content:center; padding:14px 0; }
+  .ob-dots span{ width:6px; height:6px; border-radius:50%; background:var(--line); }
+  .ob-dots span.on{ background:var(--coral); width:18px; border-radius:4px; }
+  .ob-foot{ padding:0 24px calc(24px + var(--safe-bottom)); display:flex; flex-direction:column; gap:10px; }
+  .ob-foot .tiny{ text-align:center; font-size:11.5px; color:var(--ink-faint); }
+
+  /* ============ CHAT ============ */
+  #chat-feed{ display:flex; flex-direction:column; gap:14px; }
+  .msg{ display:flex; flex-direction:column; max-width:82%; }
+  .msg.ai{ align-self:flex-start; }
+  .msg.user{ align-self:flex-end; align-items:flex-end; }
+  .note-slip{
+    background:var(--paper); border:1px solid var(--line);
+    border-radius:3px 12px 12px 12px;
+    padding:12px 14px; box-shadow:var(--shadow-note);
+    font-size:14px; line-height:1.65; position:relative;
+    animation:pin-in .32s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .msg.user .note-slip{ border-radius:12px 3px 12px 12px; background:var(--paper-2); }
+  .tape{
+    position:absolute; top:-8px; left:16px; width:34px; height:14px;
+    background:var(--coral); opacity:.85; border-radius:2px;
+    transform:rotate(-3deg);
+  }
+  .msg.user .tape{ background:var(--kraft-dark); left:auto; right:16px; transform:rotate(3deg); }
+  .who{ font-size:11px; font-weight:700; color:var(--coral-dark); margin:0 0 4px; }
+  .msg.user .who{ color:var(--ink-soft); }
+  .msg-tools{ display:flex; gap:6px; margin-top:5px; }
+  .tool-btn{
+    background:none; border:none; color:var(--ink-faint); font-size:11px;
+    display:flex; align-items:center; gap:4px; padding:2px 4px;
+  }
+  .tool-btn svg{ width:13px; height:13px; }
+  .tool-btn.playing{ color:var(--coral-dark); }
+
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:2px; }
+  .chip{
+    background:var(--paper-2); border:1px solid var(--line); border-radius:999px;
+    padding:8px 13px; font-size:12.5px; font-weight:600; color:var(--ink);
+  }
+  .chip.suggest{ border-style:dashed; color:var(--ink-soft); }
+
+  .mood-row{ display:flex; gap:8px; margin-top:8px; }
+  .mood-btn{
+    width:38px; height:38px; border-radius:50%; flex-shrink:0;
+    background:var(--paper-2); border:1px solid var(--line); color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center; transition:transform .12s ease;
+  }
+  .mood-btn svg{ width:22px; height:22px; }
+  .mood-btn:active{ transform:scale(.92); }
+  .mood-btn.selected{ background:var(--coral-solid); border-color:var(--coral-solid); color:#fff; }
+  .mood-picked{ font-size:12.5px; font-weight:600; color:var(--coral-dark); margin-top:9px; }
+  .mood-note-wrap{ display:flex; gap:8px; align-items:flex-end; margin-top:9px; }
+  .mood-note-wrap textarea{
+    flex:1; resize:none; border:1px solid var(--line); border-radius:12px; background:var(--paper-2);
+    padding:8px 11px; font-size:13px; line-height:1.5; max-height:70px;
+  }
+  .mood-skip, .text-link{ background:none; border:none; color:var(--ink-faint); font-size:12px; margin-top:10px; padding:0; }
+  .mood-skip:disabled{ opacity:.6; }
+
+  .reflect-wrap{ background:var(--paper-2); border:1px solid var(--line); border-radius:12px; padding:14px; margin-top:6px; }
+  .reflect-wrap h4{ font-family:var(--font-hand); font-size:16px; margin:0 0 3px; }
+  .reflect-wrap .sub{ font-size:12.5px; color:var(--ink-soft); margin-bottom:11px; }
+  .reflect-options{ display:flex; flex-direction:column; gap:7px; }
+  .reflect-opt{
+    display:flex; align-items:center; gap:10px; text-align:left;
+    background:var(--paper); border:1px solid var(--line); border-radius:11px; padding:10px 12px;
+    font-size:13.5px; font-weight:600; color:var(--ink);
+  }
+  .reflect-opt svg{ width:18px; height:18px; flex-shrink:0; color:var(--ink-faint); }
+  .reflect-opt.selected{ background:var(--coral-solid); border-color:var(--coral-solid); color:#fff; }
+  .reflect-opt.selected svg{ color:#fff; }
+  .reflect-picked{ font-size:12.5px; font-weight:600; color:var(--coral-dark); margin-top:10px; }
+
+  .mood-strip-card{ background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:14px; }
+  .mood-strip-card h2{ font-family:var(--font-hand); font-size:16.5px; margin:0 0 11px; }
+  .mood-strip-row{ display:flex; justify-content:space-between; gap:4px; }
+  .mood-strip-day{ display:flex; flex-direction:column; align-items:center; gap:5px; flex:1; color:var(--coral-dark); }
+  .mood-strip-day.empty{ color:var(--ink-faint); }
+  .mood-strip-day svg{ width:22px; height:22px; }
+  .mood-strip-day b{ font-size:11px; font-weight:600; color:var(--ink-faint); }
+  .mood-strip-blank{ width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:14px; }
+
+  .mini-board{
+    margin-top:8px; background:var(--kraft); background-image:radial-gradient(rgba(0,0,0,0.12) 1px, transparent 1.4px);
+    background-size:9px 9px; border-radius:5px; padding:12px; display:flex; gap:8px; overflow-x:auto;
+  }
+  .mini-note{
+    flex-shrink:0; width:96px; background:var(--paper); border-radius:3px 10px 10px 10px;
+    padding:9px; font-size:11.5px; line-height:1.4; box-shadow:var(--shadow-note);
+    transform:rotate(var(--r,-2deg));
+  }
+  .mini-note b{ display:block; font-size:10px; color:var(--coral-dark); margin-bottom:3px; }
+
+  .safety-card{
+    background:var(--safe-bg); border:1.5px solid var(--safe); border-radius:12px;
+    padding:14px; font-size:13.5px; line-height:1.7; color:var(--ink);
+    animation:pin-in .3s ease;
+  }
+  .safety-card .h{ font-weight:700; color:var(--safe); display:flex; gap:7px; align-items:center; margin-bottom:6px; }
+  .safety-card .h svg{ width:16px; height:16px; }
+  .safety-card a.callbtn{
+    display:inline-flex; align-items:center; gap:7px; margin-top:9px;
+    background:var(--safe); color:#fff; text-decoration:none; font-weight:700;
+    padding:9px 14px; border-radius:10px; font-size:13px;
+  }
+
+  @keyframes pin-in{ from{ opacity:0; transform:translateY(8px) scale(.96);} to{opacity:1; transform:none;} }
+
+  #chat-input-bar{
+    border-top:1px solid var(--line); background:var(--cream);
+    padding:10px 12px calc(10px + var(--safe-bottom));
+    flex-shrink:0;
+  }
+  .suggest-row{ display:flex; gap:7px; overflow-x:auto; padding-bottom:9px; }
+  .suggest-row button{
+    flex-shrink:0; white-space:nowrap; background:var(--paper-2); border:1px solid var(--line);
+    border-radius:999px; padding:7px 12px; font-size:12px; color:var(--ink-soft);
+  }
+  .input-row{ display:flex; align-items:flex-end; gap:8px; }
+  .input-row textarea{
+    flex:1; resize:none; border:1px solid var(--line); border-radius:16px;
+    padding:11px 14px; font-size:14px; background:var(--paper); max-height:90px; line-height:1.5;
+  }
+  .input-row textarea:focus{ outline:2px solid var(--coral); outline-offset:1px; }
+  .round-btn{
+    width:42px; height:42px; border-radius:50%; border:none; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .round-btn.mic{ background:var(--paper-2); border:1px solid var(--line); color:var(--ink); }
+  .round-btn.mic.on{ background:var(--coral-solid); color:#fff; }
+  .round-btn.send{ background:var(--coral-solid); color:#fff; }
+  .round-btn svg{ width:19px; height:19px; }
+
+  .voice-panel{
+    display:flex; flex-direction:column; align-items:center; gap:10px; padding:8px 6px 14px;
+  }
+  .voice-wave{ width:100%; height:46px; }
+  .voice-state{ font-size:13px; color:var(--ink-soft); font-weight:600; }
+
+  /* ============ BOARD ============ */
+  .ai-banner{
+    background:var(--paper-2); border:1px dashed var(--coral); border-radius:12px;
+    padding:11px 13px; font-size:12.5px; line-height:1.6; color:var(--ink); margin-bottom:14px;
+    display:flex; gap:9px;
+  }
+  .ai-banner svg{ width:18px; height:18px; flex-shrink:0; color:var(--coral-dark); margin-top:1px;}
+  .board-surface{
+    background:var(--kraft); border-radius:16px; padding:14px;
+    background-image:radial-gradient(rgba(0,0,0,0.14) 1px, transparent 1.6px);
+    background-size:11px 11px;
+    display:flex; flex-direction:column; gap:14px;
+    min-height:200px;
+  }
+  .note{
+    user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+    position:relative; background:var(--paper); border-radius:3px 12px 12px 12px;
+    box-shadow:var(--shadow-note); padding:14px 14px 12px 16px;
+    transform:rotate(var(--r,-1deg));
+    transition:transform .18s ease, box-shadow .18s ease, opacity .3s ease;
+  }
+  .note.dragging{ box-shadow:0 20px 34px -10px rgba(0,0,0,0.4); transform:scale(1.03) rotate(0deg); z-index:5; }
+  .note.dissolving{ opacity:0; transform:scale(.85) translateY(-14px); }
+  .pin{
+    position:absolute; top:-9px; left:14px; width:16px; height:16px; border-radius:50%;
+    background:var(--ink-faint); box-shadow:0 2px 3px rgba(0,0,0,0.3);
+  }
+  .note.top .pin{ background:var(--coral); box-shadow:0 2px 5px color-mix(in srgb, var(--coral) 60%, transparent); }
+  .note.paused{ opacity:.55; }
+  .note-top-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .note-cat{ font-size:11.5px; font-weight:700; color:var(--coral-dark); text-transform:none; letter-spacing:.2px; }
+  .note-rank{
+    font-size:10px; font-weight:700; background:var(--coral-solid); color:#fff; padding:2px 8px;
+    border-radius:999px; flex-shrink:0;
+  }
+  .note h3{ font-family:var(--font-hand); font-size:17px; margin:5px 0 6px; line-height:1.4; font-weight:700; }
+  .note-status{ font-size:11.5px; color:var(--ink-soft); display:flex; align-items:center; gap:6px; }
+  .progress-track{ flex:1; height:5px; background:var(--line); border-radius:99px; overflow:hidden; max-width:90px; }
+  .progress-fill{ height:100%; background:var(--coral); border-radius:99px; }
+  .note-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:9px; }
+  .drag-handle, .menu-btn{
+    width:44px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--ink-soft);
+    background:none; border:none; padding:0;
+  }
+  .drag-handle{ touch-action:none; cursor:grab; }
+  .foot-right{ display:flex; align-items:center; margin:-6px -8px -6px 0; }
+  .move-menu{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); }
+  .move-menu[hidden]{ display:none; }
+  .move-menu button{
+    background:var(--paper-2); border:1px solid var(--line); border-radius:10px; padding:9px 12px;
+    font-size:12.5px; font-weight:600; color:var(--ink);
+  }
+  .move-menu button:disabled{ opacity:.4; }
+  .empty-hint{ text-align:center; color:var(--ink-soft); font-size:13px; padding:30px 10px; }
+
+  /* Note size variants by urgency */
+  .note[data-size="lg"]{ padding-top:18px; }
+  .note[data-size="lg"] h3{ font-size:19px; }
+  .note[data-size="sm"] h3{ font-size:15px; }
+
+  /* ============ STEPS SHEET ============ */
+  .sheet-backdrop{
+    position:absolute; inset:0; background:rgba(20,15,8,0.42); z-index:40;
+    opacity:0; pointer-events:none; transition:opacity .22s ease;
+  }
+  .sheet-backdrop.open{ opacity:1; pointer-events:auto; }
+  .sheet{
+    position:absolute; left:0; right:0; bottom:0; z-index:41;
+    background:var(--paper); border-radius:22px 22px 0 0; box-shadow:var(--shadow-pop);
+    max-height:82%; display:flex; flex-direction:column;
+    transform:translateY(100%); transition:transform .28s cubic-bezier(.2,.8,.3,1);
+  }
+  .sheet.open{ transform:translateY(0); }
+  .sheet-handle{ width:38px; height:4px; background:var(--line); border-radius:99px; margin:10px auto 4px; }
+  .sheet-head{ padding:6px 20px 12px; border-bottom:1px solid var(--line); }
+  .sheet-head .cat{ font-size:11px; font-weight:700; color:var(--coral-dark); }
+  .sheet-head h2{ font-family:var(--font-hand); font-size:21px; margin:4px 0 8px; }
+  .sheet-body{ padding:14px 20px 24px; overflow-y:auto; }
+  .step-row{
+    display:flex; align-items:flex-start; gap:11px; padding:11px 0; border-bottom:1px solid var(--line);
+  }
+  .step-row:last-child{ border-bottom:none; }
+  .check{
+    width:23px; height:23px; border-radius:7px; border:2px solid var(--kraft-dark); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; margin-top:1px; background:var(--paper);
+  }
+  .check.done{ background:var(--coral-solid); border-color:var(--coral-solid); }
+  .check svg{ width:14px; height:14px; color:#fff; opacity:0; }
+  .check.done svg{ opacity:1; }
+  .step-text{ font-size:14px; line-height:1.55; }
+  .step-text.done{ text-decoration:line-through; color:var(--ink-faint); }
+
+  /* ============ HISTORY ============ */
+  .hist-group{
+    background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:12px;
+  }
+  .hist-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .hist-top h3{ font-family:var(--font-hand); font-size:16.5px; margin:0 0 4px; }
+  .status-pill{ font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; flex-shrink:0; white-space:nowrap;}
+  .status-pill.doing{ background:#F2E3C7; color:#8A6415; }
+  .status-pill.done{ background:var(--safe-bg); color:var(--safe); }
+  .status-pill.new{ background:var(--paper-2); color:var(--ink-soft); border:1px solid var(--line); }
+  .status-pill.paused{ background:var(--paper-2); color:var(--ink-faint); border:1px dashed var(--line); }
+  .hist-meta{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .hist-snip{ font-size:12.5px; color:var(--ink-soft); margin-top:8px; line-height:1.6; border-left:2px solid var(--line); padding-left:10px; }
+
+  /* ============ SETTINGS ============ */
+  .set-section{ margin-bottom:22px; }
+  .set-section h2{ font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin:0 0 10px; }
+  .theme-row{ display:flex; gap:9px; }
+  .theme-swatch{
+    flex:1; display:flex; flex-direction:column; align-items:flex-start; gap:8px;
+    background:var(--paper); border:1.5px solid var(--line); border-radius:12px; padding:11px 12px;
+    font-size:12.5px; font-weight:600; color:var(--ink-soft);
+  }
+  .theme-swatch.active{ border-color:var(--coral); color:var(--ink); }
+  .theme-swatch-dots{ display:flex; gap:5px; }
+  .theme-swatch-dots i{ width:16px; height:16px; border-radius:50%; display:block; box-shadow:0 0 0 1px rgba(0,0,0,0.08) inset; }
+  .set-row{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:13px 14px; margin-bottom:9px;
+  }
+  .set-row .lbl{ font-size:14px; font-weight:600; }
+  .set-row .desc{ font-size:12px; color:var(--ink-soft); margin-top:3px; line-height:1.5; }
+  .switch{ width:44px; height:26px; border-radius:99px; background:var(--line); position:relative; flex-shrink:0; border:none; }
+  .switch::after{ content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:transform .18s ease; box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+  .switch.on{ background:var(--coral); }
+  .switch.on::after{ transform:translateX(18px); }
+
+  /* ============ USAGE MODAL ============ */
+  .modal-backdrop{ position:absolute; inset:0; background:rgba(20,15,8,0.42); z-index:60; display:none; align-items:flex-end; justify-content:center; }
+  .modal-backdrop.open{ display:flex; }
+  .modal-card{
+    width:100%; background:var(--paper); border-radius:22px 22px 0 0; padding:22px 22px calc(26px + var(--safe-bottom));
+    box-shadow:var(--shadow-pop); animation:pin-in .25s ease;
+  }
+  .modal-card h2{ font-family:var(--font-hand); font-size:20px; margin:0 0 6px; }
+  .modal-card p{ font-size:13.5px; color:var(--ink-soft); line-height:1.6; margin:0 0 16px; }
+  .note-stack-meter{ display:flex; gap:6px; margin-bottom:18px; }
+  .note-stack-meter i{ flex:1; height:34px; border-radius:3px 8px 8px 8px; background:var(--paper-2); border:1px solid var(--line); }
+  .note-stack-meter i.used{ background:var(--coral); border-color:var(--coral-dark); }
+
+  .toast{
+    position:absolute; left:50%; bottom:96px; transform:translateX(-50%) translateY(10px);
+    background:var(--ink); color:var(--cream); padding:10px 16px; border-radius:99px; font-size:12.5px;
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:80;
+    max-width:calc(100% - 32px); width:max-content; text-align:center; border-radius:18px;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.has-action.show{ pointer-events:auto; }
+  .toast-undo{ background:none; border:none; color:var(--cream); font-weight:700; font-size:12.5px; text-decoration:underline; margin-left:12px; padding:0; }
+
+  /* welcome */
+  .ob-list{ list-style:none; margin:18px 0 0; padding:0; display:flex; flex-direction:column; gap:10px; max-width:320px; text-align:left; }
+  .ob-list li{ font-size:13.5px; line-height:1.6; color:var(--ink-soft); padding-left:18px; position:relative; }
+  .ob-list li::before{ content:''; position:absolute; left:0; top:.6em; width:7px; height:7px; border-radius:50%; background:var(--coral); }
+
+  /* calm check + session bar */
+  .calm-prompt{ font-size:12.5px; color:var(--ink-soft); margin-top:10px; }
+  .calm-row{ display:flex; align-items:center; gap:7px; margin-top:7px; flex-wrap:wrap; }
+  .calm-end{ font-size:11.5px; color:var(--ink-faint); }
+  .calm-btn{ width:36px; height:36px; border-radius:50%; flex-shrink:0; background:var(--paper-2); border:1px solid var(--line); color:var(--ink-soft); font-size:14px; font-weight:700; }
+  .calm-btn.selected{ background:var(--coral-solid); border-color:var(--coral-solid); color:#fff; }
+  .calm-btn:disabled{ cursor:default; }
+  .calm-result{ font-size:12.5px; font-weight:600; color:var(--coral-dark); margin-top:9px; line-height:1.6; }
+  .offer-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .session-bar{ display:flex; justify-content:flex-end; }
+  .session-bar[hidden]{ display:none; }
+  .session-bar .text-link{ margin:0 0 8px; }
+  .typing{ font-size:12.5px; color:var(--ink-soft); }
+  .calm-trend{ display:flex; flex-wrap:wrap; gap:7px; }
+
+  /* grounding exercise */
+  .exercise{ position:absolute; inset:0; z-index:55; background:var(--cream); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 28px calc(24px + var(--safe-bottom)); text-align:center; }
+  .exercise[hidden]{ display:none; }
+  .exercise h2{ font-family:var(--font-hand); font-size:22px; margin:0 0 8px; }
+  .exercise p{ font-size:14.5px; line-height:1.75; color:var(--ink-soft); margin:0 0 14px; max-width:300px; }
+  .exercise .count{ font-size:12.5px; color:var(--ink-faint); margin-bottom:6px; }
+  .exercise .btn{ max-width:280px; margin-top:10px; }
+  .breath-circle{ width:150px; height:150px; border-radius:50%; background:color-mix(in srgb, var(--coral) 22%, var(--paper)); border:2px solid var(--coral); animation:breathe 10s ease-in-out infinite; margin:18px 0 22px; }
+  @keyframes breathe{ 0%{transform:scale(.72);} 40%{transform:scale(1.08);} 100%{transform:scale(.72);} }
+  @media (prefers-reduced-motion: reduce){ .breath-circle{ animation:none; } }
+  .exercise-step{ font-family:var(--font-hand); font-size:19px; line-height:1.6; margin:16px 0 20px; max-width:300px; }
+
+  /* focus view */
+  .focus-step{ margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
+  .focus-step .lbl{ font-size:11.5px; color:var(--ink-faint); font-weight:700; margin-bottom:5px; }
+  .focus-step .txt{ font-size:15px; line-height:1.55; margin-bottom:11px; font-weight:600; }
+  .focus-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .focus-more{ width:100%; }
+
+  /* operator console (Wizard-of-Oz) */
+  html.operator-mode body{ padding:0 !important; }
+  html.operator-mode #stage{ max-width:860px; height:100vh; height:100dvh; border-radius:0; box-shadow:none; border:0; }
+  #operator{ position:absolute; inset:0; z-index:95; background:var(--cream); display:flex; flex-direction:column; }
+  #operator[hidden]{ display:none; }
+  .op-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 18px; border-bottom:1px solid var(--line); }
+  .op-head b{ font-size:15px; }
+  #opStatus{ font-size:12px; color:var(--ink-soft); }
+  .op-body{ flex:1; min-height:0; display:grid; grid-template-rows:auto 1fr auto; }
+  .op-ctx{ padding:10px 18px; font-size:12.5px; color:var(--ink-soft); border-bottom:1px solid var(--line); line-height:1.6; }
+  .op-log{ overflow-y:auto; padding:14px 18px; display:flex; flex-direction:column; gap:10px; min-height:0; }
+  .op-msg{ max-width:80%; padding:9px 12px; border-radius:12px; font-size:13.5px; line-height:1.6; background:var(--paper-2); border:1px solid var(--line); align-self:flex-start; }
+  .op-msg.me{ align-self:flex-end; background:var(--paper); }
+  .op-compose{ border-top:1px solid var(--line); padding:12px 18px calc(12px + var(--safe-bottom)); display:flex; flex-direction:column; gap:9px; background:var(--cream); max-height:60%; overflow-y:auto; }
+  .op-compose textarea, .op-compose input, .op-compose select{ border:1px solid var(--line); border-radius:10px; background:var(--paper); padding:9px 11px; font-size:13.5px; width:100%; }
+  .op-compose input[type="checkbox"]{ width:auto; padding:0; }
+  .op-quick{ display:flex; flex-wrap:wrap; gap:6px; }
+  .op-quick button{ background:var(--paper-2); border:1px solid var(--line); border-radius:999px; padding:6px 11px; font-size:12px; }
+  .op-checks{ display:flex; flex-wrap:wrap; gap:12px; font-size:12.5px; }
+  .op-checks label{ display:flex; align-items:center; gap:5px; }
+  .op-problem{ font-size:12.5px; }
+  .op-problem summary{ cursor:pointer; color:var(--ink-soft); margin-bottom:6px; }
+  .op-problem > *{ margin-bottom:6px; }
+  .op-pending{ font-size:12px; color:var(--coral-dark); }
+
+  /* editing (ticket 05) */
+  .field-lbl{ display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin:12px 0 5px; }
+  .field{ width:100%; border:1px solid var(--line); border-radius:10px; background:var(--paper-2); padding:10px 12px; font-size:14px; }
+  .pm-err{ color:#B4503A; font-size:12.5px; margin:8px 0 0; }
+  .modal-card .btn + .btn{ margin-top:8px; }
+  .modal-card .btn-danger{ border-color:#E2C3B4; }
+  .sheet-tools{ display:flex; gap:16px; margin-top:6px; }
+  .sheet-tools .text-link{ margin:0; }
+  .edit-row{ display:flex; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); }
+  .edit-row input{ flex:1; border:1px solid var(--line); border-radius:10px; background:var(--paper-2); padding:9px 11px; font-size:14px; }
+  .edit-row .text-link{ margin:0; padding:8px 4px; }
+  .hist-del{ margin-top:8px; align-self:flex-end; }
+  .board-actions{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .shrink-link{ display:block; margin-top:10px; }
+  .storage-note{ font-size:12px; color:var(--ink-soft); margin:2px 0 10px; line-height:1.6; }
+  .data-text{ font-size:12px; line-height:1.55; }
+
+  .demo-reset{
+    position:fixed; top:6px; right:6px; z-index:100; font-size:10px; color:rgba(255,255,255,.55);
+    background:rgba(0,0,0,.25); border:none; padding:4px 8px; border-radius:8px;
+  }
+  @media (max-width:559px){ .demo-reset{ display:none; } }
+</style>
+</head>
+<body>
+
+<button class="demo-reset" id="demoReset" type="button">รีเซ็ตดีโม่</button>
+
+<div id="stage">
+
+  <!-- ================= WELCOME ================= -->
+  <div id="onboarding">
+    <div class="ob-slide active">
+      <div class="ob-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="1.6"><path d="M12 3c-1 3-4 3.5-4 7a4 4 0 0 0 8 0c0-3.5-3-4-4-7Z"/><path d="M9 20h6M10 17h4"/></svg>
+      </div>
+      <h2>สวัสดี เราคือพี่เสก โซโล</h2>
+      <p>เพื่อนช่วยคิดเวลาที่หลายเรื่องรุมเข้ามาพร้อมกัน</p>
+      <ul class="ob-list">
+        <li>ไม่ต้องสมัคร เริ่มคุยแบบไม่ระบุตัวตนได้เลย</li>
+        <li>เราเป็นเพื่อนที่ช่วยคิด ไม่ใช่หมอ ถ้าเรื่องไหนหนักเกินไป เราจะแนะนำทางที่เหมาะกว่า</li>
+        <li>ในเวอร์ชันทดลองนี้ สิ่งที่คุณพิมพ์ยังอยู่ในเครื่องนี้เท่านั้น</li>
+        <li>สำหรับผู้ที่อายุ 18 ปีขึ้นไป</li>
+      </ul>
+    </div>
+    <div class="ob-foot">
+      <button class="btn btn-primary" id="obStart" type="button">เริ่มคุยเลย</button>
+    </div>
+  </div>
+
+  <!-- ================= APP ================= -->
+  <div id="appwrap">
+    <div class="topbar">
+      <div>
+        <h1 id="topTitle">คุยกับพี่เสก โซโล</h1>
+        <div class="sub" id="topSub">พร้อมรับฟังอยู่ตรงนี้</div>
+      </div>
+      <button class="usage-pill" id="usagePillBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg>
+        <span id="usageLabel">3/5</span>
+      </button>
+    </div>
+
+    <!-- ---- CHAT SCREEN ---- -->
+    <section class="screen active" data-screen="chat" style="min-height:0;">
+      <div class="scroll" id="chatScroll">
+        <div class="pad" id="chat-feed"></div>
+      </div>
+      <div id="chat-input-bar">
+        <div class="session-bar" id="sessionBar" hidden><button class="text-link" id="endSessionBtn" type="button">จบการคุยครั้งนี้</button></div>
+        <div class="suggest-row" id="suggestRow"></div>
+        <div id="textInputWrap" class="input-row">
+          <textarea id="msgInput" rows="1" placeholder="พิมพ์เล่าให้พี่เสก โซโลฟังได้เลย…"></textarea>
+          <button class="round-btn mic" id="micBtn" type="button" aria-label="พูดแทนพิมพ์">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+          </button>
+          <button class="round-btn send" id="sendBtn" type="button" aria-label="ส่งข้อความ">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12 20 4l-6 16-3-7-7-1Z"/></svg>
+          </button>
+        </div>
+        <div id="voicePanelWrap" style="display:none;">
+          <div class="voice-panel">
+            <svg class="voice-wave" viewBox="0 0 240 46" id="waveSvg"><path id="wavePath" d="M0 23 H240" stroke="var(--coral)" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>
+            <div class="voice-state" id="voiceState">แตะไมค์เพื่อเริ่มพูด</div>
+            <div style="display:flex; gap:10px;">
+              <button class="round-btn mic on" id="micToggleBtn" type="button" aria-label="เริ่ม/หยุดฟัง">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+              </button>
+              <button class="btn-quiet btn btn-sm" id="backToTextBtn" type="button">พิมพ์แทน</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- BOARD SCREEN ---- -->
+    <section class="screen" data-screen="board">
+      <div class="scroll"><div class="pad">
+        <div class="ai-banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3c-1 3-4 3.5-4 7a4 4 0 0 0 8 0c0-3.5-3-4-4-7Z"/></svg>
+          <div id="boardBannerText"></div>
+        </div>
+        <div class="board-actions">
+          <button class="btn btn-quiet" id="decideForMeBtn" type="button">ไม่อยากเลือกวันนี้ — ให้พี่เสก โซโลเลือกให้</button>
+          <button class="btn btn-quiet" id="addProblemBtn" type="button">+ เพิ่มเรื่องเอง</button>
+        </div>
+        <div class="board-surface" id="boardSurface"></div>
+      </div></div>
+    </section>
+
+    <!-- ---- HISTORY SCREEN ---- -->
+    <section class="screen" data-screen="history">
+      <div class="scroll"><div class="pad" id="historyList"></div></div>
+    </section>
+
+    <!-- ---- SETTINGS SCREEN ---- -->
+    <section class="screen" data-screen="settings">
+      <div class="scroll"><div class="pad">
+
+        <div class="set-section">
+          <h2>รูปลักษณ์</h2>
+          <div class="theme-row">
+            <button type="button" class="theme-swatch active" data-color-theme="mint">
+              <span class="theme-swatch-dots"><i style="background:#8FC7B8"></i><i style="background:#5B9BD5"></i></span>
+              ฟ้า-มิ้นท์ (ค่าเริ่มต้น)
+            </button>
+            <button type="button" class="theme-swatch" data-color-theme="">
+              <span class="theme-swatch-dots"><i style="background:#C9A66B"></i><i style="background:#D97B5F"></i></span>
+              อบอุ่น
+            </button>
+          </div>
+        </div>
+
+        <div class="set-section">
+          <h2>ความเป็นส่วนตัว</h2>
+          <div class="set-row">
+            <div>
+              <div class="lbl">โหมดคุยแล้วลืม</div>
+              <div class="desc">เรื่องที่พี่เสก โซโลจับจากการคุยตอนเปิดโหมดนี้จะไม่ถูกบันทึกไว้ในเครื่อง และโน้ตที่พิมพ์ไว้จะถูกลืม (ระดับอารมณ์และคะแนนความสงบยังบันทึกตามปกติ)</div>
+            </div>
+            <button class="switch" id="forgetSwitch" type="button" aria-pressed="false"></button>
+          </div>
+          <div class="set-row">
+            <div>
+              <div class="lbl">ข้อมูลของคุณอยู่ที่ไหน</div>
+              <div class="desc">เก็บไว้ในเครื่องนี้เท่านั้น ตอนนี้ไม่มีข้อความออกจากเครื่อง (ยกเว้นเมื่อเปิดโหมดผู้ดำเนินการ ซึ่งส่งถึงหน้าต่างอื่นในเบราว์เซอร์เดียวกันเท่านั้น) ถ้าวันหนึ่งมีการส่งข้อความไปประมวลผลที่อื่น เราจะบอกตรงนี้ให้ชัดก่อน</div>
+            </div>
+          </div>
+          <div class="storage-note" id="storageNote"></div>
+          <button class="btn btn-quiet btn-sm" id="downloadDataBtn" type="button">ดูและคัดลอกข้อมูลของฉัน</button>
+        </div>
+
+        <div class="set-section">
+          <h2>ประวัติการสนทนา</h2>
+          <button class="btn btn-danger btn-sm" id="deleteAllBtn" type="button" style="margin-bottom:8px;">ลบประวัติทั้งหมด</button>
+          <div class="desc" style="font-size:12px;color:var(--ink-soft);">ลบทีละเรื่องได้ที่ปุ่ม "ลบ" ในหน้าประวัติ หรือในหน้าขั้นตอนของเรื่องนั้น</div>
+        </div>
+
+        <div class="set-section">
+          <h2>Safety Net</h2>
+          <div class="set-row" style="align-items:flex-start;">
+            <div>
+              <div class="lbl">สายด่วนเมื่อเจอสัญญาณวิกฤต</div>
+              <div class="desc">หากพี่เสก โซโลพบข้อความที่บ่งชี้ว่าคุณกำลังอยู่ในภาวะวิกฤต จะแนะนำสายด่วนสุขภาพจิต 1323 ให้ทันที เพราะพี่เสก โซโลเป็นเพื่อนช่วยคิด ไม่ใช่ผู้เชี่ยวชาญด้านนี้โดยตรง</div>
+            </div>
+          </div>
+          <button class="btn btn-quiet btn-sm" id="previewSafetyBtn" type="button">ดูตัวอย่างหน้าจอนี้</button>
+        </div>
+
+        <div class="set-section">
+          <h2>สำหรับทีมทดสอบ</h2>
+          <div class="set-row">
+            <div>
+              <div class="lbl">ให้ผู้ดำเนินการตอบ (Wizard-of-Oz)</div>
+              <div class="desc" id="wizardDesc">ข้อความจะส่งไปที่คอนโซลผู้ดำเนินการที่เปิดในเบราว์เซอร์เดียวกัน ถ้าไม่มีคนตอบใน 45 วินาที ระบบจะตอบแทนอัตโนมัติ</div>
+            </div>
+            <button class="switch" id="wizardSwitch" type="button" aria-pressed="false"></button>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-quiet btn-sm" id="openOperatorBtn" type="button">ใช้หน้าต่างนี้เป็นคอนโซลผู้ดำเนินการ</button>
+            <button class="btn btn-quiet btn-sm" id="loadSampleBtn" type="button">โหลดข้อมูลตัวอย่าง</button>
+          </div>
+        </div>
+
+      </div></div>
+    </section>
+  </div>
+
+  <div class="bottomnav">
+    <button class="navbtn active" data-nav="chat" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v10H9l-4 4V5Z"/></svg>
+      คุยกับพี่เสก โซโล
+    </button>
+    <button class="navbtn" data-nav="board" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.4" fill="currentColor" stroke="none"/></svg>
+      กระดาน
+    </button>
+    <button class="navbtn" data-nav="history" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3 2"/></svg>
+      ประวัติ
+    </button>
+    <button class="navbtn" data-nav="settings" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="2.6"/><path d="M12 3.5v2.2M12 18.3v2.2M4.9 6.9l1.55 1.55M17.55 15.55l1.55 1.55M3.5 12h2.2M18.3 12h2.2M4.9 17.1l1.55-1.55M17.55 8.45l1.55-1.55"/></svg>
+      ตั้งค่า
+    </button>
+  </div>
+
+  <!-- ---- STEPS SHEET ---- -->
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <div class="sheet" id="stepsSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <div class="cat" id="sheetCat">การเงิน</div>
+      <h2 id="sheetTitle">ชื่อปัญหา</h2>
+      <div class="hist-meta" id="sheetProgress">0/0 ขั้นตอน</div>
+      <div class="sheet-tools">
+        <button class="text-link" id="sheetRename" type="button">เปลี่ยนชื่อ / หมวด</button>
+        <button class="text-link" id="sheetDelete" type="button">ลบเรื่องนี้</button>
+      </div>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+
+  <!-- ---- USAGE MODAL ---- -->
+  <div class="modal-backdrop" id="usageModalBackdrop">
+    <div class="modal-card">
+      <h2>บทสนทนาเดือนนี้</h2>
+      <p id="usageDesc">คุณใช้ไป 3 จาก 5 บทสนทนาในเดือนนี้ ไม่ต้องกังวล โควตาจะรีเซ็ตใหม่ทุกเดือน</p>
+      <div class="note-stack-meter" id="usageMeter"></div>
+      <button class="btn btn-primary" id="upgradeBtn">อัพเกรดเป็น Premium ไม่จำกัดบทสนทนา</button>
+      <button class="btn btn-ghost" id="closeUsageBtn" style="margin-top:8px;">ปิดหน้าต่างนี้</button>
+    </div>
+  </div>
+
+  <!-- ---- ADD / EDIT PROBLEM ---- -->
+  <div class="modal-backdrop" id="problemModalBackdrop">
+    <div class="modal-card">
+      <h2 id="problemModalTitle">เพิ่มเรื่องที่หนักใจ</h2>
+      <label class="field-lbl" for="pmTitle">เรื่องอะไร</label>
+      <input class="field" id="pmTitle" maxlength="80" placeholder="เช่น หนี้บัตรเครดิต">
+      <label class="field-lbl" for="pmCat">หมวด</label>
+      <select class="field" id="pmCat"></select>
+      <div id="pmStepsWrap">
+        <label class="field-lbl" for="pmSteps">ขั้นตอนเล็กๆ (บรรทัดละ 1 ข้อ ไม่บังคับ)</label>
+        <textarea class="field" id="pmSteps" rows="3" placeholder="เช่น&#10;ดูยอดหนี้ทั้งหมด&#10;โทรถามเรื่องผ่อนจ่าย"></textarea>
+      </div>
+      <div class="pm-err" id="pmErr" hidden></div>
+      <div style="margin-top:14px;">
+        <button class="btn btn-primary" id="pmSave" type="button">บันทึก</button>
+        <button class="btn btn-ghost" id="pmCancel" type="button">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- CONFIRM ---- -->
+  <div class="modal-backdrop" id="confirmModalBackdrop">
+    <div class="modal-card">
+      <h2 id="confirmTitle">แน่ใจไหม</h2>
+      <p id="confirmMsg"></p>
+      <button class="btn btn-danger" id="confirmOk" type="button">ตกลง</button>
+      <button class="btn btn-ghost" id="confirmCancel" type="button">ยกเลิก</button>
+    </div>
+  </div>
+
+  <!-- ---- DATA VIEW ---- -->
+  <div class="modal-backdrop" id="dataModalBackdrop">
+    <div class="modal-card">
+      <h2>ข้อมูลของคุณ</h2>
+      <p>ทุกอย่างที่เก็บไว้ในเครื่องนี้ คัดลอกไปเก็บเองได้</p>
+      <textarea class="field data-text" id="dataText" rows="9" readonly></textarea>
+      <div style="margin-top:12px;">
+        <button class="btn btn-quiet" id="dataCopy" type="button">คัดลอก</button>
+        <button class="btn btn-ghost" id="dataClose" type="button">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- GROUNDING EXERCISE ---- -->
+  <div class="exercise" id="exercise" hidden>
+    <div id="exerciseBody"></div>
+    <button class="text-link" id="exerciseSkip" type="button">ข้ามไว้ก่อน</button>
+  </div>
+
+  <!-- ---- PRIORITY QUESTION ---- -->
+  <div class="modal-backdrop" id="priorityModalBackdrop">
+    <div class="modal-card">
+      <h2>เรื่องไหนที่ถ้าปล่อยไว้จะแย่ลงเร็วที่สุด?</h2>
+      <p>แตะเรื่องเดียวก็พอ พี่เสก โซโลจะจัดลำดับให้ตามที่คุณตอบ</p>
+      <div class="reflect-options" id="priorityOptions"></div>
+      <button class="btn btn-ghost" id="priorityCancel" type="button" style="margin-top:12px;">ยกเลิก</button>
+    </div>
+  </div>
+
+  <!-- ---- OPERATOR CONSOLE (Wizard-of-Oz) ---- -->
+  <div id="operator" hidden>
+    <div class="op-head">
+      <div><b>คอนโซลผู้ดำเนินการ</b> <span id="opStatus">ยังไม่มีผู้ใช้เชื่อมต่อ</span></div>
+      <button class="btn btn-quiet btn-sm" id="opExit" type="button">กลับเป็นผู้ใช้</button>
+    </div>
+    <div class="op-body">
+      <div class="op-ctx" id="opCtx">รอผู้ใช้ส่งข้อความแรก</div>
+      <div class="op-log" id="opLog"></div>
+      <div class="op-compose">
+        <div class="op-quick" id="opQuick"></div>
+        <textarea id="opReply" rows="3" placeholder="พิมพ์คำตอบในนามพี่เสก โซโล…"></textarea>
+        <details class="op-problem">
+          <summary>เพิ่มปัญหาที่ได้ยินจากผู้ใช้ (ขึ้นกระดานของผู้ใช้)</summary>
+          <input id="opProbTitle" placeholder="ชื่อปัญหา เช่น หนี้บัตรเครดิต">
+          <select id="opProbCat"><option>การเงิน</option><option>การงาน</option><option>ความสัมพันธ์</option><option>ครอบครัว</option><option>สุขภาพ</option><option>การเรียน</option><option>อื่นๆ</option></select>
+          <textarea id="opProbSteps" rows="3" placeholder="ขั้นตอนเล็กๆ บรรทัดละ 1 ข้อ"></textarea>
+          <button class="btn btn-quiet btn-sm" id="opAddProb" type="button">เพิ่มเข้าคำตอบ</button>
+          <div class="op-pending" id="opPending"></div>
+        </details>
+        <div class="op-checks">
+          <label><input type="checkbox" id="opAskPriority"> ถามเรื่องที่แย่ลงเร็วสุด</label>
+          <label><input type="checkbox" id="opAskCalm"> ขอ Calm Check หลังคุย</label>
+          <label><input type="checkbox" id="opSafety"> ขึ้นการ์ดสายด่วน 1323</label>
+        </div>
+        <button class="btn btn-primary" id="opSend" type="button">ส่งคำตอบ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script id="lre-engine">
+/* Session engine: the single seam for the Companion conversation. No DOM access.
+   An adapter implements respond(turn) -> Promise<payload>; the engine owns Session
+   boundaries, quota accounting and the safety floor. See .scratch/core-value-v2/spec.md */
+var LRE = (function(){
+  "use strict";
+
+  var SESSION_IDLE_MS = 30 * 60 * 1000;
+  var CRISIS_WORDS = ['ฆ่าตัวตาย','อยากตาย','ทำร้ายตัวเอง','ไม่อยากมีชีวิตอยู่','ไม่อยากอยู่แล้ว'];
+
+  function detectSafety(text){
+    text = String(text || '');
+    return CRISIS_WORDS.some(function(w){ return text.indexOf(w) > -1; });
+  }
+
+  function createSession(now){
+    return { id:'s'+now, startedAt:now, lastAt:now, turns:0, calmBefore:null, calmAfter:null, exercise:null, afterOffered:false };
+  }
+  function isSessionExpired(session, now){
+    return !session || (now - session.lastAt) > SESSION_IDLE_MS;
+  }
+
+  var CATEGORIES = [
+    { cat:'การเงิน', title:'เรื่องเงิน',
+      words:['เงิน','หนี้','ผ่อน','ค่าใช้จ่าย','บัตรเครดิต','รายได้','ตังค์'],
+      steps:['จดรายจ่ายที่ผ่านมา 1 สัปดาห์','เลือก 1 รายจ่ายที่ตัดได้ก่อน','ตั้งเวลาเช็คยอดทุกวันศุกร์'] },
+    { cat:'การงาน', title:'เรื่องงาน',
+      words:['งาน','หัวหน้า','เจ้านาย','ออฟฟิศ','ลาออก','เดดไลน์'],
+      steps:['เขียนงานที่กดดันที่สุด 1 อย่าง','บอกหัวหน้าหรือเพื่อนร่วมงาน 1 อย่างที่ต้องการให้ช่วย','ตั้งเวลาเลิกงานให้ชัดเจน 1 วัน'] },
+    { cat:'ความสัมพันธ์', title:'เรื่องความสัมพันธ์',
+      words:['แฟน','คนรัก','เลิกกัน','ทะเลาะ','สามี','ภรรยา','เพื่อน'],
+      steps:['เขียนสิ่งที่อยากพูดโดยไม่โทษกัน','ชวนคุยตอนที่ทั้งคู่ใจเย็นแล้ว'] },
+    { cat:'ครอบครัว', title:'เรื่องครอบครัว',
+      words:['ที่บ้าน','พ่อ','แม่','ครอบครัว','พี่น้อง','ลูก'],
+      steps:['ส่งข้อความสั้นๆ ทักไปก่อน','นัดโทรคุยช่วงสุดสัปดาห์'] },
+    { cat:'สุขภาพ', title:'เรื่องการนอนและสุขภาพ',
+      words:['นอนไม่หลับ','ป่วย','สุขภาพ','ปวด','เหนื่อยล้า'],
+      steps:['จดเวลานอนและตื่นของคืนนี้','งดจอก่อนนอน 30 นาที'] },
+    { cat:'การเรียน', title:'เรื่องการเรียน',
+      words:['เรียน','สอบ','มหาลัย','การบ้าน','อาจารย์'],
+      steps:['เลือกวิชาที่กังวลที่สุด 1 วิชา','อ่านแค่ 15 นาทีวันนี้'] }
+  ];
+
+  function trim(s){ return String(s).replace(/^\s+|\s+$/g, ''); }
+
+  // Rule-based extraction from the user's own words. Returns {problems:[{title,cat,steps}], duplicates:[cat]}.
+  function extractProblems(text, existing){
+    text = String(text || '');
+    var hits = [];
+    CATEGORIES.forEach(function(c){
+      var best = -1;
+      c.words.forEach(function(w){
+        var i = text.indexOf(w);
+        if(i > -1 && (best < 0 || i < best)) best = i;
+      });
+      if(best > -1) hits.push({ c:c, idx:best });
+    });
+    hits.sort(function(a, b){ return a.idx - b.idx; });
+    var clauses = text.split(/[,，、;；\n。]+/).map(trim).filter(Boolean);
+    var problems = [], duplicates = [];
+    hits.forEach(function(h){
+      var exists = (existing || []).some(function(p){ return p.cat === h.c.cat && p.status !== 'done'; });
+      if(exists){ duplicates.push(h.c.cat); return; }
+      var clause = clauses.filter(function(cl){
+        return h.c.words.some(function(w){ return cl.indexOf(w) > -1; });
+      })[0] || '';
+      var multi = CATEGORIES.filter(function(c2){
+        return c2.words.some(function(w){ return clause.indexOf(w) > -1; });
+      }).length > 1;
+      var title = (!clause || multi || clause.length < 3)
+        ? h.c.title
+        : trim(clause.replace(/^(ตอนนี้|ช่วงนี้|แล้วก็)\s*/, ''));
+      if(title.length > 40) title = title.slice(0, 40) + '…';
+      problems.push({ title:title, cat:h.c.cat, steps:h.c.steps.slice() });
+    });
+    return { problems:problems, duplicates:duplicates };
+  }
+
+  var CATEGORY_NAMES = CATEGORIES.map(function(c){ return c.cat; }).concat(['อื่นๆ']);
+  function categories(){ return CATEGORY_NAMES.slice(); }
+  function starterSteps(cat){
+    var c = CATEGORIES.filter(function(x){ return x.cat === cat; })[0];
+    return c ? c.steps.slice() : ['ลองเขียนว่าเรื่องนี้ต้องการอะไร 1 ประโยค'];
+  }
+
+  // Shrinking a step that feels too big. Level 1 and 2 give a smaller first step; level 3 means "can't go smaller".
+  var SHRINK_RULES = [
+    { re:/(ส่ง|ทัก)/, t:'เปิดแชทหาคนนั้น แล้วพิมพ์แค่คำว่า "สวัสดี" ยังไม่ต้องส่งก็ได้' },
+    { re:/(คุย|บอก|ชวน|โทร)/, t:'พิมพ์ประโยคแรกที่อยากพูดลงโน้ต แค่ 1 ประโยค ยังไม่ต้องส่ง' },
+    { re:/(จด|เขียน)/, t:'เปิดโน้ตแล้วพิมพ์แค่ 1 บรรทัดแรก' },
+    { re:/(ตั้ง)/, t:'เปิดแอปนาฬิกาหรือปฏิทินค้างไว้ 1 นาที' },
+    { re:/(เลือก)/, t:'เขียนตัวเลือกออกมา 2 ข้อ แค่ 2 ข้อก็พอ' },
+    { re:/(อ่าน)/, t:'อ่านแค่ 1 หน้า หรือ 5 นาที' },
+    { re:/(นัด)/, t:'ดูว่าสัปดาห์นี้ว่างวันไหนบ้าง แค่ 1 วัน' },
+    { re:/(งด|ลด)/, t:'ลองทำแค่คืนเดียว ไม่ต้องทำทุกวัน' }
+  ];
+  function shrinkStep(text, level){
+    level = level || 1;
+    if(level >= 3) return null;
+    if(level === 2) return 'แค่หยิบสิ่งที่ต้องใช้มาวางไว้ตรงหน้า ยังไม่ต้องลงมือก็ได้';
+    text = String(text || '');
+    for(var i = 0; i < SHRINK_RULES.length; i++){
+      if(SHRINK_RULES[i].re.test(text)) return SHRINK_RULES[i].t;
+    }
+    return 'ลองเริ่มแค่ 2 นาที แล้วค่อยตัดสินใจว่าจะทำต่อไหม';
+  }
+  function detectShrinkRequest(text){
+    return /(ใหญ่เกิน|ทำไม่ไหว|ยากเกิน|เริ่มไม่ถูก)/.test(String(text || ''));
+  }
+
+  // Local-first persistence: pure (de)serialization so it can be tested without a browser.
+  function monthKey(now){
+    var d = new Date(now == null ? Date.now() : now);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+  function serializeState(snap, now){
+    var problems = (snap.problems || []).filter(function(p){ return !p.ephemeral; });
+    var ids = {};
+    problems.forEach(function(p){ ids[p.id] = true; });
+    return JSON.stringify({
+      v: 1,
+      month: monthKey(now),
+      problems: problems,
+      order: (snap.order || []).filter(function(id){ return ids[id]; }),
+      moodHistory: (snap.moodHistory || []).filter(function(e){ return !e.sample; }),
+      usage: snap.usage,
+      completed: (snap.completed || []).slice(-200),
+      session: snap.session || null,
+      pending: snap.pending || { calmBefore:null, exercise:null },
+      theme: snap.theme || null
+    });
+  }
+  function restoreState(json, now){
+    var d;
+    try { d = JSON.parse(json); } catch(e){ return null; }
+    if(!d || d.v !== 1 || !Array.isArray(d.problems) || !Array.isArray(d.order)) return null;
+    var usage = (d.usage && typeof d.usage.used === 'number') ? { used:d.usage.used, limit:d.usage.limit || 5 } : { used:0, limit:5 };
+    if(d.month !== monthKey(now)) usage.used = 0;
+    return {
+      problems: d.problems,
+      order: d.order.filter(function(id){ return d.problems.some(function(p){ return p.id === id; }); }),
+      moodHistory: Array.isArray(d.moodHistory) ? d.moodHistory : [],
+      usage: usage,
+      completed: Array.isArray(d.completed) ? d.completed : [],
+      session: d.session || null,
+      pending: d.pending || { calmBefore:null, exercise:null },
+      theme: d.theme || null
+    };
+  }
+
+  function normalizePayload(p){
+    p = p || {};
+    return {
+      reply: p.reply ? String(p.reply) : '',
+      problems: (p.problems || []).map(function(x){
+        return { title:String(x.title || ''), cat:String(x.cat || 'อื่นๆ'), steps:(x.steps || []).map(String) };
+      }).filter(function(x){ return x.title; }),
+      safety: !!p.safety,
+      askPriority: !!p.askPriority,
+      askCalmAfter: !!p.askCalmAfter,
+      shrinkNext: !!p.shrinkNext
+    };
+  }
+
+  var GENERIC_REPLIES = [
+    'ฟังอยู่นะ เล่าต่อได้เลย ไม่ต้องรีบ',
+    'ขอบคุณที่เล่าให้ฟัง ตอนนี้ในหัวมีเรื่องไหนวนอยู่มากที่สุด',
+    'ถ้าต้องเลือกสักเรื่องที่หนักที่สุดตอนนี้ คือเรื่องอะไร',
+    'ค่อยๆ ไปทีละก้าวได้เสมอ ตอนนี้อยากให้พี่ช่วยตรงไหนก่อน'
+  ];
+
+  // Default adapter: rule-based replies, no network. delayMs=0 makes it synchronous-ish for tests.
+  function createScriptedAdapter(opts){
+    var delay = (opts && opts.delayMs != null) ? opts.delayMs : 600;
+    var n = 0;
+    function later(payload){
+      return new Promise(function(resolve){
+        if(delay > 0) setTimeout(function(){ resolve(payload); }, delay); else resolve(payload);
+      });
+    }
+    return {
+      name: 'scripted',
+      respond: function(turn){
+        var res = extractProblems(turn.text, turn.context && turn.context.problems);
+        var cats = res.problems.map(function(p){ return p.cat; });
+        var payload = { reply:'', problems:res.problems, safety:false, askPriority:false, askCalmAfter:false, shrinkNext:false };
+        var ctx = turn.context || {};
+        if(detectSafety(turn.text)){
+          payload.safety = true;
+        } else if(detectShrinkRequest(turn.text) && ctx.focusStep){
+          payload.shrinkNext = true;
+          payload.reply = 'ไม่เป็นไรนะ ถ้าข้อนั้นใหญ่ไปก็ย่อให้เล็กลงได้ พี่ย่อให้แล้ว ลองดูข้อใหม่ที่เล็กกว่าเดิมบนกระดาน';
+        } else if(res.problems.length >= 2){
+          payload.reply = 'ขอบคุณที่เล่านะ พี่ได้ยินว่ามีเรื่อง ' + cats.join(' และ ') + ' เข้ามาพร้อมกัน พี่ปักไว้บนกระดานให้แล้ว ไม่ต้องแก้ทุกเรื่องพร้อมกันก็ได้';
+          payload.askPriority = true;
+        } else if(res.problems.length === 1){
+          payload.reply = 'พี่ได้ยินว่าเรื่อง' + cats[0] + 'กำลังหนักใจอยู่ พี่ปักไว้บนกระดานให้แล้วนะ ยังมีเรื่องอื่นที่ค้างอยู่อีกไหม หรือเรื่องนี้หนักที่สุดแล้ว';
+        } else if(res.duplicates.length){
+          payload.reply = 'เรื่อง' + res.duplicates.join(' และ ') + 'ปักไว้บนกระดานอยู่แล้วนะ มีอะไรใหม่เกิดขึ้นกับเรื่องนี้ไหม หรือมีเรื่องอื่นอีก';
+        } else {
+          payload.reply = GENERIC_REPLIES[n++ % GENERIC_REPLIES.length];
+        }
+        return later(payload);
+      }
+    };
+  }
+
+  // Wizard-of-Oz adapter: a human operator answers over a message channel
+  // ({postMessage, onmessage}). Falls back to `fallback` if nobody answers in time.
+  function createOperatorAdapter(channel, fallback, opts){
+    opts = opts || {};
+    var timeoutMs = opts.timeoutMs != null ? opts.timeoutMs : 45000;
+    var waiting = {};
+    var present = false;
+    var seq = 0;
+    channel.onmessage = function(m){
+      var d = m && m.data;
+      if(!d) return;
+      if(d.type === 'hello'){
+        present = true;
+        if(opts.onPresence) opts.onPresence(true);
+      } else if(d.type === 'reply'){
+        var payload = normalizePayload(d);
+        var w = d.id ? waiting[d.id] : null;
+        if(w){ clearTimeout(w.timer); delete waiting[d.id]; w.resolve(payload); }
+        else if(opts.onPush){ opts.onPush(payload); }
+      }
+    };
+    return {
+      name: 'operator',
+      isOperatorPresent: function(){ return present; },
+      ping: function(){ channel.postMessage({ type:'ping' }); },
+      respond: function(turn){
+        return new Promise(function(resolve){
+          var id = 't' + Date.now() + '_' + (seq++);
+          var timer = setTimeout(function(){
+            delete waiting[id];
+            Promise.resolve(fallback.respond(turn)).then(resolve);
+          }, timeoutMs);
+          waiting[id] = { resolve:resolve, timer:timer };
+          channel.postMessage({
+            type:'turn', id:id, text:turn.text,
+            session:{ id:turn.session.id, turns:turn.session.turns, calmBefore:turn.session.calmBefore, calmAfter:turn.session.calmAfter },
+            context: turn.context
+          });
+        });
+      }
+    };
+  }
+
+  function createEngine(opts){
+    opts = opts || {};
+    var e = {
+      adapter: opts.adapter,
+      usage: { used: opts.used || 0, limit: opts.limit || 5 },
+      session: null,
+      completed: [],
+      pending: { calmBefore:null, exercise:null }
+    };
+    function archive(){ if(e.session){ e.completed.push(e.session); e.session = null; } }
+    e.isActive = function(now){ return !!e.session && !isSessionExpired(e.session, now == null ? Date.now() : now); };
+    // The quota only ever blocks *starting* a Session, and never a safety message (ADR-0004).
+    e.canStart = function(text, now){
+      if(e.isActive(now)) return { ok:true };
+      if(detectSafety(text)) return { ok:true };
+      if(e.usage.used >= e.usage.limit) return { ok:false, reason:'quota' };
+      return { ok:true };
+    };
+    e.takeTurn = function(text, context, now){
+      now = (now == null) ? Date.now() : now;
+      var gate = e.canStart(text, now);
+      if(!gate.ok) return Promise.resolve({ blocked:true, reason:gate.reason });
+      var started = false;
+      var safety = detectSafety(text);
+      if(!e.isActive(now)){
+        archive();
+        e.session = createSession(now);
+        if(!(safety && e.usage.used >= e.usage.limit)) e.usage.used++;
+        e.session.calmBefore = e.pending.calmBefore;
+        e.session.exercise = e.pending.exercise;
+        e.pending = { calmBefore:null, exercise:null };
+        started = true;
+      }
+      var session = e.session;
+      session.lastAt = now;
+      session.turns++;
+      var turn = { text:text, session:session, context:context || {} };
+      return Promise.resolve(e.adapter.respond(turn)).then(function(payload){
+        payload = normalizePayload(payload);
+        if(safety) payload.safety = true;
+        return { payload:payload, session:session, startedNewSession:started };
+      });
+    };
+    e.recordCalm = function(which, v){
+      if(which === 'before'){
+        if(e.session) e.session.calmBefore = v; else e.pending.calmBefore = v;
+      } else if(e.session){
+        e.session.calmAfter = v;
+      }
+    };
+    e.recordExercise = function(kind, completed){
+      var rec = { kind:kind, completed:!!completed };
+      if(e.session) e.session.exercise = rec; else e.pending.exercise = rec;
+    };
+    e.shouldOfferCalmAfter = function(now){
+      var s = e.session;
+      return !!s && e.isActive(now) && s.turns >= 5 && s.calmAfter == null && !s.afterOffered;
+    };
+    e.markAfterOffered = function(){ if(e.session) e.session.afterOffered = true; };
+    e.endSession = function(){ var s = e.session; archive(); return s; };
+    e.allSessions = function(){ return e.completed.concat(e.session ? [e.session] : []); };
+    return e;
+  }
+
+  return {
+    SESSION_IDLE_MS: SESSION_IDLE_MS,
+    detectSafety: detectSafety,
+    extractProblems: extractProblems,
+    createScriptedAdapter: createScriptedAdapter,
+    createOperatorAdapter: createOperatorAdapter,
+    createEngine: createEngine,
+    isSessionExpired: isSessionExpired,
+    categories: categories,
+    starterSteps: starterSteps,
+    shrinkStep: shrinkStep,
+    detectShrinkRequest: detectShrinkRequest,
+    serializeState: serializeState,
+    restoreState: restoreState,
+    monthKey: monthKey
+  };
+})();
+if(typeof module !== 'undefined' && module.exports){ module.exports = LRE; }
+</script>
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- state ---------------- */
+  var SAMPLE_PROBLEMS = [
+    {id:'p1', title:'เงินเดือนไม่พอใช้ถึงสิ้นเดือน', cat:'การเงิน', urgency:5, status:'active',
+      steps:[{t:'จดรายจ่ายทั้งหมดของเดือนนี้',done:true},{t:'เลือก 1 รายจ่ายที่ตัดได้ก่อน',done:true},{t:'ลองคุยเรื่องผ่อนจ่ายกับเจ้าหนี้ 1 ราย',done:false},{t:'ตั้งเตือนเช็คยอดทุกวันศุกร์',done:false}]},
+    {id:'p2', title:'งานเยอะจนนอนไม่หลับ', cat:'การงาน', urgency:4, status:'active',
+      steps:[{t:'เลือกงานที่กดดันที่สุด 1 อย่าง',done:true},{t:'บอกหัวหน้าว่าต้องขอเลื่อนงานหนึ่งชิ้น',done:false},{t:'ตั้งเวลาเลิกงานที่ชัดเจนสัปดาห์นี้',done:false}]},
+    {id:'p3', title:'ทะเลาะกับแฟนบ่อยขึ้น', cat:'ความสัมพันธ์', urgency:3, status:'new',
+      steps:[{t:'เขียนสิ่งที่อยากพูดโดยไม่โทษกัน',done:false},{t:'ชวนคุยตอนที่ทั้งคู่ใจเย็นแล้ว',done:false}]},
+    {id:'p4', title:'ไม่ได้คุยกับที่บ้านมานาน รู้สึกผิด', cat:'ครอบครัว', urgency:2, status:'new',
+      steps:[{t:'ส่งข้อความสั้นๆ ทักไปก่อน',done:false},{t:'นัดโทรคุยยาวสักครั้งช่วงสุดสัปดาห์',done:false}]}
+  ];
+  var state = {
+    forgetMode:false,
+    problems:[],
+    order:[],
+    moodHistory:[],
+    todayMoodLevel:null
+  };
+  var scriptedAdapter = LRE.createScriptedAdapter();
+  var engine = LRE.createEngine({ adapter:scriptedAdapter, limit:5 });
+
+  /* ---------------- local-first persistence (ADR-0005) ---------------- */
+  var STORE_KEY = 'lr_state_v1';
+  var lastSaved = '';
+  var restoredTheme = null;
+  var storageOk = (function(){
+    try{ localStorage.setItem('lr_probe','1'); localStorage.removeItem('lr_probe'); return true; }catch(e){ return false; }
+  })();
+  function snapshotNow(){
+    return {
+      problems: state.problems, order: state.order, moodHistory: state.moodHistory,
+      usage: engine.usage, completed: engine.completed, session: engine.session, pending: engine.pending,
+      theme: document.documentElement.getAttribute('data-color-theme') || 'warm'
+    };
+  }
+  function saveNow(){
+    if(!storageOk) return;
+    try{
+      var json = LRE.serializeState(snapshotNow());
+      if(json !== lastSaved){ localStorage.setItem(STORE_KEY, json); lastSaved = json; }
+    }catch(e){ storageOk = false; updateStorageNote(); }
+  }
+  function loadSaved(){
+    if(!storageOk) return;
+    var raw = null;
+    try{ raw = localStorage.getItem(STORE_KEY); }catch(e){ return; }
+    var d = raw ? LRE.restoreState(raw) : null;
+    if(!d) return;
+    state.problems = d.problems;
+    state.order = d.order;
+    state.moodHistory = d.moodHistory;
+    var todays = d.moodHistory.filter(function(e){ return e.date === localDateStr(); })[0];
+    state.todayMoodLevel = todays ? todays.level : null;
+    engine.usage = d.usage;
+    engine.completed = d.completed;
+    engine.session = d.session;
+    engine.pending = d.pending;
+    restoredTheme = d.theme;
+  }
+
+  /* ---------------- mood-checkin domain module (pure, spec: .scratch/mood-check-in/spec.md) ---------------- */
+  function localDateStr(d){ d=d||new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function isDueToday(history, now){ var today=localDateStr(now); return !history.some(function(e){ return e.date===today; }); }
+  function recordEntry(history, entry){ return history.concat([entry]); }
+  function applyForgetMode(entry){ return {date:entry.date, level:entry.level}; }
+  function recentHistory(history, days){
+    var now=new Date(), out=[];
+    for(var i=days-1;i>=0;i--){
+      var d=new Date(now); d.setDate(d.getDate()-i);
+      var ds=localDateStr(d);
+      out.push({date:ds, entry:history.find(function(e){ return e.date===ds; }) || null});
+    }
+    return out;
+  }
+  var MOOD_LABELS = {1:'แย่มาก',2:'ไม่ค่อยดี',3:'เฉยๆ',4:'ดี',5:'ดีมาก'};
+  function moodIconSvg(level){
+    var mouths = {1:'M8 16.5q4-3.5 8 0',2:'M8 15.5q4-1.8 8 0',3:'M8 14h8',4:'M8 13q4 2 8 0',5:'M7 12q5 4.5 10 0'};
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r=".9" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r=".9" fill="currentColor" stroke="none"/><path d="'+mouths[level]+'"/></svg>';
+  }
+  loadSaved();
+  // example data, loaded only on request from Settings (the app starts empty)
+  function loadSampleData(){
+    state.problems = JSON.parse(JSON.stringify(SAMPLE_PROBLEMS)).map(function(p){ p.sample = true; p.ephemeral = true; return p; });
+    state.order = state.problems.map(function(p){ return p.id; });
+    var sample=[3,4,null,2,3,5];
+    var seeded = state.moodHistory.filter(function(e){ return e.date===localDateStr(); });
+    state.moodHistory = seeded;
+    for(var i=6;i>=1;i--){
+      var lvl = sample[6-i];
+      if(lvl==null) continue;
+      var d=new Date(); d.setDate(d.getDate()-i);
+      state.moodHistory.push({date:localDateStr(d), level:lvl, sample:true});
+    }
+    renderBoard();
+    toast('โหลดข้อมูลตัวอย่างแล้ว (ตัวอย่างสำหรับดูหน้าตา จะไม่ถูกบันทึกและหายเมื่อรีโหลด)');
+  }
+
+  /* ---------------- helpers ---------------- */
+  function $(sel, root){ return (root||document).querySelector(sel); }
+  function $all(sel, root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
+  function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e; }
+  function statusLabel(s){ return s==='done'?'แก้ไขแล้ว':(s==='active'?'กำลังดำเนินการ':(s==='paused'?'พักไว้ก่อน':'ยังไม่เริ่ม')); }
+  function toast(msg, undoFn){
+    var t = $('#toast'); t.textContent = msg;
+    t.classList.toggle('has-action', !!undoFn);
+    if(undoFn){
+      var b = el('button','toast-undo','เลิกทำ'); b.type='button';
+      b.addEventListener('click', function(){ undoFn(); t.classList.remove('show'); });
+      t.appendChild(b);
+    }
+    t.classList.add('show');
+    clearTimeout(toast._h); toast._h = setTimeout(function(){ t.classList.remove('show'); }, undoFn ? 6000 : 2200);
+  }
+  function safeLocal(fn, fallback){ try{ return fn(); }catch(e){ return fallback; } }
+
+  /* ---------------- welcome ---------------- */
+  $('#obStart').addEventListener('click', finishOnboarding);
+  function finishOnboarding(){
+    $('#onboarding').style.display = 'none';
+    safeLocal(function(){ localStorage.setItem('lr_seen_onboarding','1'); });
+    renderChatIntro();
+    var inp = $('#msgInput'); if(inp) inp.focus();
+  }
+  if (safeLocal(function(){ return localStorage.getItem('lr_seen_onboarding'); })) {
+    $('#onboarding').style.display = 'none';
+  }
+
+  /* ---------------- nav ---------------- */
+  var screens = { chat:$('[data-screen="chat"]'), board:$('[data-screen="board"]'), history:$('[data-screen="history"]'), settings:$('[data-screen="settings"]') };
+  var titles = { chat:['คุยกับพี่เสก โซโล','พร้อมรับฟังอยู่ตรงนี้'], board:['กระดานของคุณ','ปัญหาที่เปิดอยู่ตอนนี้'], history:['ประวัติ','จัดกลุ่มตามปัญหา ไม่ใช่ตามเวลา'], settings:['ตั้งค่า','ความเป็นส่วนตัวของคุณ'] };
+  function goTo(name){
+    Object.keys(screens).forEach(function(k){ screens[k].classList.toggle('active', k===name); });
+    $all('.navbtn').forEach(function(b){ b.classList.toggle('active', b.dataset.nav===name); });
+    $('#topTitle').textContent = titles[name][0];
+    $('#topSub').textContent = titles[name][1];
+    if(name==='board') renderBoard();
+    if(name==='history') renderHistory();
+  }
+  $all('.navbtn').forEach(function(b){ b.addEventListener('click', function(){ goTo(b.dataset.nav); }); });
+  $('#usagePillBtn').addEventListener('click', function(){ openUsage(false); });
+
+  /* ================= CHAT ================= */
+  var feed = $('#chat-feed');
+  var scrollBox = $('#chatScroll');
+
+  function scrollBottom(){ requestAnimationFrame(function(){ scrollBox.scrollTop = scrollBox.scrollHeight; }); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function replyHtml(s){ return escapeHtml(s).replace(/\n/g,'<br>'); }
+
+  function addNote(who, html, opts){
+    opts = opts || {};
+    var wrap = el('div','msg '+who);
+    var who_label = who==='ai' ? 'พี่เสก โซโล' : (who==='user'?'คุณ':'');
+    var slip = el('div','note-slip');
+    slip.innerHTML = '<div class="tape"></div>' + (who_label?'<div class="who">'+who_label+'</div>':'') + '<div class="body">'+html+'</div>';
+    wrap.appendChild(slip);
+    if(who==='ai' && opts.speak !== false){
+      var tools = el('div','msg-tools');
+      var playBtn = el('button','tool-btn'); playBtn.type='button';
+      playBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 9v6h4l5 4V5L9 9H5Z"/></svg> ฟังเสียง';
+      playBtn.addEventListener('click', function(){ speakText(opts.raw || html.replace(/<[^>]+>/g,''), playBtn); });
+      tools.appendChild(playBtn);
+      slip.appendChild(tools);
+    }
+    feed.appendChild(wrap);
+    scrollBottom();
+    return wrap;
+  }
+  // a Companion card whose body is custom (inputs, buttons); returns the slip element
+  function noteSlip(bodyHtml){
+    var wrap = el('div','msg ai');
+    var slip = el('div','note-slip');
+    slip.innerHTML = '<div class="tape"></div><div class="who">พี่เสก โซโล</div>' + bodyHtml;
+    wrap.appendChild(slip);
+    feed.appendChild(wrap);
+    scrollBottom();
+    return slip;
+  }
+  function addTyping(){
+    var wrap = el('div','msg ai');
+    var slip = el('div','note-slip');
+    slip.innerHTML = '<div class="tape"></div><div class="typing">พี่เสก โซโลกำลังพิมพ์…</div>';
+    wrap.appendChild(slip);
+    feed.appendChild(wrap);
+    scrollBottom();
+    return wrap;
+  }
+
+  function addSafetyCard(){
+    var wrap = el('div','msg ai');
+    var card = el('div','safety-card');
+    card.innerHTML = '<div class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V6l-8-3Z"/><path d="M12 9v4M12 16h.01"/></svg>ขอพักตรงนี้สักครู่นะ</div>'
+      + 'ฟังดูเหมือนตอนนี้เป็นเรื่องที่หนักเกินกว่าที่เพื่อนอย่างพี่เสก โซโลจะรับไหวคนเดียว คุณไม่ได้ทำอะไรผิด และไม่ต้องเผชิญเรื่องนี้ตามลำพัง มีคนที่พร้อมรับฟังและช่วยได้จริงๆ ตอนนี้'
+      + '<br><a class="callbtn" href="tel:1323"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 3a2 2 0 0 1-.5 2.1L8 10.1a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c1 .3 2 .5 3 .7a2 2 0 0 1 1.6 2Z"/></svg> โทรสายด่วนสุขภาพจิต 1323</a>';
+    wrap.appendChild(card);
+    feed.appendChild(wrap);
+    scrollBottom();
+  }
+
+  function speakText(text, btn){
+    if(!('speechSynthesis' in window)){ toast('เบราว์เซอร์นี้เล่นเสียงไม่ได้ (โหมดจำลอง)'); return; }
+    try{
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'th-TH'; u.rate = 1;
+      if(btn){ btn.classList.add('playing'); u.onend = function(){ btn.classList.remove('playing'); }; }
+      window.speechSynthesis.speak(u);
+    }catch(e){ toast('เล่นเสียงไม่ได้ในตอนนี้'); }
+  }
+
+  /* ---- session start: mood (once a day) + grounding offer. Nothing here blocks typing. ---- */
+  var moodSlip = null;
+  function renderChatIntro(){
+    if(feed.children.length) return;
+    if(isDueToday(state.moodHistory, new Date())){ renderMoodPrompt(); }
+    renderGroundingCard();
+  }
+
+  function calmRowHtml(){
+    var btns = [1,2,3,4,5].map(function(v){
+      return '<button type="button" class="calm-btn" data-v="'+v+'" aria-label="สงบ '+v+' จาก 5">'+v+'</button>';
+    }).join('');
+    return '<div class="calm-row"><span class="calm-end">ยังวุ่นอยู่</span>'+btns+'<span class="calm-end">สงบดี</span></div>';
+  }
+  function attachCalm(root, which, onPick){
+    $all('.calm-btn', root).forEach(function(b){
+      b.addEventListener('click', function(){
+        var v = +b.dataset.v;
+        $all('.calm-btn', root).forEach(function(x){ x.classList.toggle('selected', x===b); x.disabled = true; });
+        engine.recordCalm(which, v);
+        if(onPick) onPick(v);
+      });
+    });
+  }
+  function calmMessage(before, after){
+    if(before==null) return 'บันทึกไว้แล้ว: '+after+' จาก 5';
+    if(after>before) return 'ตอนเริ่ม '+before+' ตอนนี้ '+after+' ดีใจที่ค่อยๆ สงบลงนะ';
+    if(after===before) return 'ตอนเริ่ม '+before+' ตอนนี้ก็ '+after+' ไม่เป็นไร ได้พักตรงนี้ก็ถือว่าดีแล้ว';
+    return 'ตอนเริ่ม '+before+' ตอนนี้ '+after+' ขอบคุณที่บอกตรงๆ ถ้าอยากคุยต่อ พี่อยู่ตรงนี้';
+  }
+
+  function renderGroundingCard(){
+    var slip = noteSlip(
+      '<div class="body">พร้อมเมื่อไหร่ เล่าได้เลยนะ ไม่ต้องรีบ ถ้าอยากพักหายใจก่อน พี่ทำเป็นเพื่อนได้</div>'+
+      '<div class="calm-prompt">ตอนนี้สงบแค่ไหน (ไม่บังคับ)</div>'+calmRowHtml()+
+      '<div class="calm-result" hidden></div>'+
+      '<div class="offer-row">'+
+        '<button type="button" class="btn btn-quiet btn-sm" data-ex="breath">หายใจด้วยกัน 1 นาที</button>'+
+        '<button type="button" class="btn btn-quiet btn-sm" data-ex="54321">5-4-3-2-1</button>'+
+      '</div>');
+    attachCalm(slip, 'before', function(v){
+      var r = slip.querySelector('.calm-result'); r.hidden = false; r.textContent = 'บันทึกไว้แล้ว: '+v+' จาก 5';
+    });
+    $all('[data-ex]', slip).forEach(function(b){ b.addEventListener('click', function(){ openExercise(b.dataset.ex); }); });
+    renderSuggestRow(['ลองพิมพ์: ตอนนี้เครียดเรื่องเงิน งาน แล้วก็แฟนด้วย']);
+  }
+
+  function renderMoodPrompt(){
+    var iconsHtml = [1,2,3,4,5].map(function(lvl){
+      return '<button type="button" class="mood-btn" data-level="'+lvl+'" aria-label="'+MOOD_LABELS[lvl]+'">'+moodIconSvg(lvl)+'</button>';
+    }).join('');
+    var slip = noteSlip(
+      '<div class="body">วันนี้รู้สึกยังไงบ้าง</div>'+
+      '<div class="mood-row">'+iconsHtml+'</div>'+
+      '<div class="mood-picked" hidden></div>'+
+      '<div class="mood-note-wrap" hidden>'+
+        '<textarea class="mood-note" rows="1" placeholder="อยากเล่าเพิ่มไหม (ไม่บังคับ — พี่เสก โซโลจะไม่อ่านส่วนนี้)"></textarea>'+
+        '<button type="button" class="round-btn send mood-note-send" aria-label="บันทึกโน้ต"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12 20 4l-6 16-3-7-7-1Z"/></svg></button>'+
+      '</div>'+
+      '<button type="button" class="mood-skip">ข้ามข้อนี้ไปก่อน</button>');
+    moodSlip = slip;
+    $all('.mood-btn', slip).forEach(function(btn){
+      btn.addEventListener('click', function(){ submitMood(+btn.dataset.level, slip); });
+    });
+    slip.querySelector('.mood-skip').addEventListener('click', function(){ dimMoodSlip(slip, 'ข้ามแล้ว'); });
+  }
+  function dimMoodSlip(slip, label){
+    slip.querySelector('.mood-row').style.opacity = '.4';
+    var skipBtn = slip.querySelector('.mood-skip');
+    skipBtn.textContent = label; skipBtn.disabled = true;
+    $all('.mood-btn', slip).forEach(function(b){ b.disabled = true; });
+    if(moodSlip===slip) moodSlip = null;
+  }
+  function autoSkipMood(){ if(moodSlip) dimMoodSlip(moodSlip, 'ข้ามไว้ก่อน'); }
+
+  function submitMood(level, slip){
+    $all('.mood-btn', slip).forEach(function(b){
+      b.classList.toggle('selected', +b.dataset.level === level);
+      b.disabled = true;
+    });
+    slip.querySelector('.mood-skip').style.display = 'none';
+    var picked = slip.querySelector('.mood-picked');
+    picked.hidden = false;
+    picked.textContent = 'บันทึกไว้แล้ว: ' + MOOD_LABELS[level];
+    if(moodSlip===slip) moodSlip = null;
+
+    state.moodHistory = recordEntry(state.moodHistory, {date:localDateStr(new Date()), level:level});
+    state.todayMoodLevel = level;
+
+    var noteWrap = slip.querySelector('.mood-note-wrap');
+    noteWrap.hidden = false;
+    var noteInput = noteWrap.querySelector('.mood-note');
+    var sendBtn = noteWrap.querySelector('.mood-note-send');
+    function saveNote(){
+      var note = noteInput.value.trim();
+      if(!note || noteInput.disabled) return;
+      var idx = state.moodHistory.length - 1;
+      var updated = Object.assign({}, state.moodHistory[idx], {note:note});
+      if(forgetOn){ updated = applyForgetMode(updated); }
+      state.moodHistory[idx] = updated;
+      noteInput.disabled = true; sendBtn.disabled = true;
+      toast(forgetOn ? 'บันทึกอารมณ์ไว้แล้ว (โน้ตนี้จะถูกลืมเพราะเปิดโหมดคุยแล้วลืมอยู่)' : 'บันทึกโน้ตไว้แล้วนะ');
+    }
+    sendBtn.addEventListener('click', saveNote);
+    noteInput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); saveNote(); } });
+
+    if(level<=2){
+      addNote('ai','ขอบคุณที่บอกตามตรงนะว่าวันนี้ไม่ค่อยโอเค พี่เสก โซโลอยู่ตรงนี้ ไม่ต้องรีบพูดอะไรก็ได้ แค่อยากให้รู้ว่ามีคนฟังอยู่');
+    }
+  }
+
+  function renderSuggestRow(items, onPick){
+    var row = $('#suggestRow'); row.innerHTML='';
+    if(!items || !items.length){ row.style.display='none'; return; }
+    row.style.display='flex';
+    items.forEach(function(txt){
+      var label = txt.replace('ลองพิมพ์: ','');
+      var b = el('button', null, label);
+      b.type='button';
+      b.addEventListener('click', function(){
+        if(onPick){ onPick(label); return; }
+        if(sendUserText(label)){ /* sent */ }
+      });
+      row.appendChild(b);
+    });
+  }
+
+  /* ---- talking to the Companion, always through the engine ---- */
+  function buildContext(){
+    return {
+      problems: state.problems.map(function(p){ return {id:p.id, title:p.title, cat:p.cat, status:p.status}; }),
+      moodLevel: state.todayMoodLevel,
+      focusStep: (function(){ var id = state.order.filter(isActiveId)[0]; var p = id && state.problems.find(function(x){return x.id===id;}); var s = p && nextStepOf(p); return s ? s.t : null; })()
+    };
+  }
+  function addProblemFromPayload(pr){
+    var p = {
+      id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+      title: pr.title, cat: pr.cat, urgency: 3, status: 'new', ephemeral: forgetOn,
+      steps: (pr.steps || []).map(function(t){ return {t:t, done:false}; })
+    };
+    state.problems.push(p);
+    state.order.push(p.id);
+    return p;
+  }
+  function miniBoardHtml(list){
+    return '<div class="mini-board">' + list.map(function(p, i){
+      return '<div class="mini-note" style="--r:'+(i%2?'1.5deg':'-2deg')+'"><b>'+escapeHtml(p.cat)+'</b>'+escapeHtml(p.title)+'</div>';
+    }).join('') + '</div>';
+  }
+  function applyPayload(payload){
+    if(!payload) return;
+    if(payload.reply){ addNote('ai', replyHtml(payload.reply), {raw:payload.reply}); }
+    if(payload.problems && payload.problems.length){
+      var added = payload.problems.map(addProblemFromPayload);
+      renderBoard();
+      addNote('ai', 'ปักไว้บนกระดานให้แล้วนะ' + miniBoardHtml(added), {raw:'ปักไว้บนกระดานให้แล้วนะ'});
+    }
+    if(payload.shrinkNext){
+      var topId = state.order.filter(isActiveId)[0];
+      var topP = topId && state.problems.find(function(x){return x.id===topId;});
+      if(topP) shrinkNextStep(topP);
+    }
+    if(payload.safety){ addSafetyCard(); }
+    if(payload.askPriority){ renderPriorityCard(); }
+    if(payload.askCalmAfter){ renderCalmAfterCard(false); }
+  }
+  function sendUserText(raw){
+    var text = String(raw || '').trim();
+    if(!text) return false;
+    var gate = engine.canStart(text);
+    if(!gate.ok){ openUsage(true); return false; }
+    autoSkipMood();
+    addNote('user', escapeHtml(text), {speak:false});
+    renderSuggestRow([]);
+    var typing = addTyping();
+    engine.takeTurn(text, buildContext()).then(function(res){
+      if(typing.parentNode) typing.parentNode.removeChild(typing);
+      if(res.blocked){ openUsage(true); return; }
+      applyPayload(res.payload);
+      refreshSessionBar();
+      renderUsage();
+      if(engine.shouldOfferCalmAfter()){ engine.markAfterOffered(); renderCalmAfterCard(false); }
+    }).catch(function(err){
+      if(typing.parentNode) typing.parentNode.removeChild(typing);
+      console.error(err);
+      addNote('ai', 'ขอโทษนะ ตอนนี้พี่ตอบไม่ได้ ลองส่งอีกครั้งได้ไหม', {speak:false});
+    });
+    return true;
+  }
+  function handleSend(){
+    var input = $('#msgInput');
+    if(sendUserText(input.value)){ input.value=''; autoGrow(input); }
+  }
+
+  function renderPriorityCard(){
+    if(state.order.filter(isActiveId).length < 2) return;
+    var slip = noteSlip('<div class="body">ถ้าต้องเลือก เรื่องไหนที่ถ้าปล่อยไว้จะแย่ลงเร็วที่สุด</div><div class="reflect-options" style="margin-top:10px"></div>');
+    fillPriorityOptions(slip.querySelector('.reflect-options'), function(id){
+      $all('button', slip).forEach(function(b){ b.disabled = true; });
+      var top = answerPriority(id);
+      addNote('ai', top ? 'ปักเรื่อง “'+escapeHtml(top.title)+'” เป็นอันดับ 1 ให้แล้วนะ ไปดูที่กระดานได้เลย' : 'จัดลำดับให้แล้วนะ');
+      renderSuggestRow(['ไปดูกระดานเลย'], function(){ goTo('board'); });
+    });
+  }
+
+  /* ---- ending a Session, and the "after" Calm Check ---- */
+  function refreshSessionBar(){ $('#sessionBar').hidden = !engine.isActive(); }
+  function finishSession(){
+    engine.endSession();
+    refreshSessionBar();
+    toast('จบการคุยครั้งนี้แล้ว');
+  }
+  function renderCalmAfterCard(endAfter){
+    var s = engine.session;
+    var before = s ? s.calmBefore : null;
+    var slip = noteSlip(
+      '<div class="body">ก่อนไปต่อ ตอนนี้สงบแค่ไหน'+(before!=null ? ' (ตอนเริ่มคุณให้ '+before+')' : '')+'</div>'+
+      calmRowHtml()+
+      '<div class="calm-result" hidden></div>'+
+      '<button type="button" class="text-link calm-skip">ข้ามข้อนี้</button>');
+    attachCalm(slip, 'after', function(v){
+      var r = slip.querySelector('.calm-result'); r.hidden = false; r.textContent = calmMessage(before, v);
+      slip.querySelector('.calm-skip').style.display = 'none';
+      if(endAfter) finishSession();
+    });
+    slip.querySelector('.calm-skip').addEventListener('click', function(){
+      $all('.calm-btn', slip).forEach(function(b){ b.disabled = true; });
+      slip.querySelector('.calm-skip').style.display = 'none';
+      if(endAfter) finishSession();
+    });
+  }
+  $('#endSessionBtn').addEventListener('click', function(){
+    if(!engine.isActive()){ refreshSessionBar(); return; }
+    if(engine.session.calmAfter!=null){ finishSession(); return; }
+    renderCalmAfterCard(true);
+  });
+
+  var msgInput = $('#msgInput');
+  function autoGrow(t){ t.style.height='auto'; t.style.height = Math.min(t.scrollHeight,90)+'px'; }
+  msgInput.addEventListener('input', function(){ autoGrow(msgInput); });
+  msgInput.addEventListener('keydown', function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); handleSend(); } });
+  $('#sendBtn').addEventListener('click', handleSend);
+
+  /* ---- voice mode ---- */
+  var recognizer = null, listening=false;
+  var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  $('#micBtn').addEventListener('click', function(){
+    $('#textInputWrap').style.display='none';
+    $('#voicePanelWrap').style.display='block';
+    $('#suggestRow').style.display='none';
+  });
+  $('#backToTextBtn').addEventListener('click', function(){
+    stopListening();
+    $('#textInputWrap').style.display='flex';
+    $('#voicePanelWrap').style.display='none';
+  });
+  function setVoiceState(txt){ $('#voiceState').textContent = txt; }
+  function animateWave(on){
+    var path = $('#wavePath');
+    clearInterval(animateWave._t);
+    if(!on){ path.setAttribute('d','M0 23 H240'); return; }
+    var t=0;
+    animateWave._t = setInterval(function(){
+      t+=1;
+      var d='M0 23 ';
+      for(var x=0;x<=240;x+=12){
+        var y = 23 + Math.sin((x+t*14)/16) * (6+Math.random()*8);
+        d += 'L'+x+' '+y.toFixed(1)+' ';
+      }
+      path.setAttribute('d', d);
+    }, 90);
+  }
+  function startListening(){
+    listening = true;
+    $('#micToggleBtn').classList.add('on');
+    setVoiceState('กำลังฟังอยู่…');
+    animateWave(true);
+    if(SpeechRec){
+      try{
+        recognizer = new SpeechRec();
+        recognizer.lang='th-TH'; recognizer.interimResults=false; recognizer.maxAlternatives=1;
+        recognizer.onresult = function(e){
+          var text = e.results[0][0].transcript;
+          finishListening(text);
+        };
+        recognizer.onerror = function(){ finishListening(null); };
+        recognizer.onend = function(){ if(listening) finishListening(null); };
+        recognizer.start();
+        return;
+      }catch(e){ /* fall through to simulated */ }
+    }
+    // simulated fallback
+    animateWave._sim = setTimeout(function(){ finishListening('__SIM__'); }, 1800);
+  }
+  function stopListening(){
+    listening = false;
+    animateWave(false);
+    $('#micToggleBtn').classList.remove('on');
+    clearTimeout(animateWave._sim);
+    if(recognizer){ try{ recognizer.stop(); }catch(e){} }
+    setVoiceState('แตะไมค์เพื่อเริ่มพูด');
+  }
+  function finishListening(text){
+    listening = false; animateWave(false); $('#micToggleBtn').classList.remove('on');
+    clearTimeout(animateWave._sim);
+    setVoiceState('กำลังคิด…');
+    setTimeout(function(){
+      var said = (text && text!=='__SIM__') ? text : 'ตอนนี้เครียดเรื่องเงิน งาน แล้วก็แฟนด้วย';
+      setVoiceState('แตะไมค์เพื่อเริ่มพูด');
+      sendUserText(said);
+    }, 700);
+  }
+  $('#micToggleBtn').addEventListener('click', function(){ listening ? stopListening() : startListening(); });
+
+  /* ================= BOARD ================= */
+  var dragCtx = null;
+  function isActiveId(id){
+    var p = state.problems.find(function(x){return x.id===id;});
+    return !!p && p.status !== 'paused';
+  }
+  function undoOrderTo(before){ return function(){ state.order = before; renderBoard(); }; }
+  function moveNote(id, where){
+    var before = state.order.slice();
+    var slots = [], ids = [];
+    state.order.forEach(function(x, i){ if(isActiveId(x)){ slots.push(i); ids.push(x); } });
+    var from = ids.indexOf(id);
+    var to = where==='top' ? 0 : from + where;
+    if(from<0 || to<0 || to>=ids.length || to===from) return;
+    ids.splice(from,1); ids.splice(to,0,id);
+    slots.forEach(function(slot, k){ state.order[slot] = ids[k]; });
+    renderBoard();
+    toast('ย้ายโน้ตแล้ว', undoOrderTo(before));
+  }
+  function attachLongPress(note){
+    var timer = null, sx = 0, sy = 0, lastY = 0;
+    function clear(){ clearTimeout(timer); timer = null; }
+    note.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+    note.addEventListener('pointerdown', function(ev){
+      if(ev.target.closest('button, .drag-handle, .move-menu')) return;
+      if(ev.pointerType==='mouse' && ev.button!==0) return;
+      sx = ev.clientX; sy = lastY = ev.clientY;
+      timer = setTimeout(function(){
+        timer = null;
+        startDrag({clientY:lastY, preventDefault:function(){}}, note);
+      }, 350);
+    });
+    note.addEventListener('pointermove', function(ev){
+      lastY = ev.clientY;
+      if(timer && (Math.abs(ev.clientX-sx)>8 || Math.abs(ev.clientY-sy)>8)) clear();
+    });
+    ['pointerup','pointercancel','pointerleave'].forEach(function(t){ note.addEventListener(t, clear); });
+  }
+
+  var boardExpanded = false;
+  function ephemeralTag(p){ return p.ephemeral ? ' · '+(p.sample ? 'ตัวอย่าง' : 'ชั่วคราว') : ''; }
+  function pct(p){
+    return p.steps.length ? Math.round(100 * p.steps.filter(function(s){return s.done;}).length / p.steps.length) : 0;
+  }
+  function nextStepOf(p){ return p.steps.find(function(s){ return !s.done; }); }
+  function completeNextStep(p){
+    var s = nextStepOf(p);
+    if(!s) return;
+    s.done = true;
+    if(p.status==='new') p.status = 'active';
+    if(p.steps.every(function(x){return x.done;})){ openSteps(p.id); renderReflectPrompt(p); }
+    else { renderBoard(); toast('เก่งมาก ทำข้อนี้เสร็จแล้ว'); }
+  }
+
+  function sortActivesByUrgency(){
+    var actives = state.order.filter(isActiveId);
+    var paused = state.order.filter(function(id){ return actives.indexOf(id)===-1; });
+    actives.sort(function(a,b){
+      var pa = state.problems.find(function(x){return x.id===a;});
+      var pb = state.problems.find(function(x){return x.id===b;});
+      return pb.urgency - pa.urgency;
+    });
+    state.order = actives.concat(paused);
+  }
+  // The Companion's prioritization question: the person names what worsens fastest (or asks it to guess).
+  function answerPriority(id){
+    var before = state.order.slice();
+    var prevUrgency = {};
+    state.problems.forEach(function(p){ prevUrgency[p.id] = p.urgency; });
+    if(id){
+      var max = Math.max.apply(null, state.problems.map(function(p){ return p.urgency; }));
+      state.problems.find(function(p){ return p.id===id; }).urgency = max + 1;
+    }
+    sortActivesByUrgency();
+    renderBoard();
+    toast(id ? 'จัดลำดับตามที่คุณตอบแล้ว' : 'พี่เสก โซโลเดาลำดับให้แล้ว', function(){
+      state.order = before;
+      state.problems.forEach(function(p){ p.urgency = prevUrgency[p.id]; });
+      renderBoard();
+    });
+    var topId = state.order.filter(isActiveId)[0];
+    return state.problems.find(function(p){ return p.id===topId; });
+  }
+  function fillPriorityOptions(container, onPick){
+    container.innerHTML = '';
+    state.order.filter(isActiveId).forEach(function(id){
+      var p = state.problems.find(function(x){return x.id===id;});
+      var b = el('button','reflect-opt'); b.type = 'button';
+      b.innerHTML = '<span>'+escapeHtml(p.title)+'</span>';
+      b.addEventListener('click', function(){ onPick(id); });
+      container.appendChild(b);
+    });
+    var guess = el('button','reflect-opt'); guess.type = 'button';
+    guess.innerHTML = '<span>ไม่แน่ใจ ให้พี่เสก โซโลเดาให้</span>';
+    guess.addEventListener('click', function(){ onPick(null); });
+    container.appendChild(guess);
+  }
+  function closePriorityModal(){ $('#priorityModalBackdrop').classList.remove('open'); }
+  function openPriorityModal(){
+    if(state.order.filter(isActiveId).length < 2){ toast('ตอนนี้มีเรื่องเดียว ไม่ต้องจัดลำดับก็ได้'); return; }
+    fillPriorityOptions($('#priorityOptions'), function(id){ closePriorityModal(); answerPriority(id); });
+    $('#priorityModalBackdrop').classList.add('open');
+  }
+  function decideForMe(){ openPriorityModal(); }
+
+  function renderFocusCard(surf, id){
+    var p = state.problems.find(function(x){return x.id===id;});
+    var done = p.steps.filter(function(s){return s.done;}).length;
+    var next = nextStepOf(p);
+    var note = el('div','note top'); note.dataset.id = p.id;
+    note.setAttribute('data-size','lg');
+    note.style.setProperty('--r','-1deg');
+    var stepHtml;
+    if(next){
+      stepHtml = '<div class="focus-step"><div class="lbl">ขั้นตอนถัดไป</div><div class="txt">'+escapeHtml(next.t)+'</div>'+
+        '<div class="focus-actions"><button class="btn btn-primary btn-sm doNext" type="button">ทำข้อนี้เสร็จแล้ว</button>'+
+        '<button class="btn btn-quiet btn-sm openSteps" type="button">ดูขั้นตอนทั้งหมด</button></div>'+
+        '<button class="text-link shrink-link shrinkBtn" type="button">ข้อนี้ใหญ่เกินไป ช่วยย่อให้หน่อย</button></div>';
+    } else if(p.steps.length){
+      stepHtml = '<div class="focus-step"><div class="txt">ทำครบทุกขั้นตอนแล้ว</div><div class="focus-actions"><button class="btn btn-primary btn-sm closeIt" type="button">ปิดเรื่องนี้</button><button class="btn btn-quiet btn-sm openSteps" type="button">ดูขั้นตอน</button></div></div>';
+    } else {
+      stepHtml = '<div class="focus-step"><div class="txt">ยังไม่มีขั้นตอน</div><div class="focus-actions"><button class="btn btn-quiet btn-sm openSteps" type="button">เพิ่มขั้นตอน</button></div></div>';
+    }
+    note.innerHTML =
+      '<div class="pin"></div>'+
+      '<div class="note-top-row"><span class="note-cat">'+escapeHtml(p.cat)+ephemeralTag(p)+'</span><span class="note-rank">เรื่องวันนี้</span></div>'+
+      '<h3>'+escapeHtml(p.title)+'</h3>'+
+      '<div class="note-status"><div class="progress-track"><div class="progress-fill" style="width:'+pct(p)+'%"></div></div>'+done+'/'+p.steps.length+' ขั้นตอน</div>'+
+      stepHtml;
+    surf.appendChild(note);
+    var dn = note.querySelector('.doNext');
+    if(dn) dn.addEventListener('click', function(){ completeNextStep(p); });
+    var sb = note.querySelector('.shrinkBtn');
+    if(sb) sb.addEventListener('click', function(){ shrinkNextStep(p); });
+    var ci = note.querySelector('.closeIt');
+    if(ci) ci.addEventListener('click', function(){ openSteps(p.id); renderReflectPrompt(p); });
+    note.querySelector('.openSteps').addEventListener('click', function(){ openSteps(p.id); });
+    var others = state.order.length - 1;
+    if(others > 0){
+      var more = el('button','btn btn-quiet focus-more','ดูเรื่องอื่นทั้งหมด ('+others+' เรื่อง) — ไม่ต้องรีบ');
+      more.type = 'button';
+      more.addEventListener('click', function(){ boardExpanded = true; renderBoard(); });
+      surf.appendChild(more);
+    }
+  }
+
+  function renderBoard(){
+    var surf = $('#boardSurface');
+    surf.innerHTML='';
+    var activeIdsNow = state.order.filter(isActiveId);
+    var focusMode = !boardExpanded && activeIdsNow.length >= 1;
+    $('#boardBannerText').textContent = focusMode
+      ? 'เริ่มจากเรื่องเดียวก็พอ เรื่องอื่นรอได้ ไม่ต้องรีบทำพร้อมกัน'
+      : 'พี่เสก โซโลจัดลำดับให้ตามเรื่องที่น่าจะแย่ลงเร็วที่สุดถ้าไม่จัดการก่อน — กดค้างที่โน้ตแล้วลาก หรือกด ⋯ เพื่อย้ายขึ้น-ลงได้เสมอ ลำดับสุดท้ายเป็นของคุณ';
+    if(!state.order.length){ surf.appendChild(el('div','empty-hint','ยังไม่มีเรื่องบนกระดาน ลองเล่าให้พี่เสก โซโลฟังในแท็บแชทได้เลย')); return; }
+    if(focusMode){ renderFocusCard(surf, activeIdsNow[0]); return; }
+    var activeIdx = 0;
+    var activeTotal = activeIdsNow.length;
+    state.order.forEach(function(id, idx){
+      var p = state.problems.find(function(x){return x.id===id;});
+      if(!p) return;
+      var paused = p.status === 'paused';
+      var done = p.steps.filter(function(s){return s.done;}).length;
+      var note = el('div','note'+(paused?' paused':'')); note.dataset.id=p.id;
+      note.style.setProperty('--r', (idx%2? '1.2deg':'-1.4deg'));
+      var size = 'md';
+      if(!paused){
+        if(activeIdx===0) size = 'lg';
+        else if(activeTotal>=3 && activeIdx===activeTotal-1) size = 'sm';
+      }
+      note.setAttribute('data-size', size);
+      var rankBadge = '';
+      if(!paused){
+        if(activeIdx===0) note.classList.add('top');
+        rankBadge = activeIdx===0 ? '<span class="note-rank">ลำดับ 1</span>' : '<span class="note-rank" style="background:var(--kraft-dark)">ลำดับ '+(activeIdx+1)+'</span>';
+        activeIdx++;
+      } else {
+        rankBadge = '<span class="note-rank" style="background:var(--ink-faint)">พักไว้ก่อน</span>';
+      }
+      var footBtns = paused
+        ? '<button class="btn-quiet btn btn-sm resumeBtn" type="button">เอากลับมาทำต่อ</button>'
+        : '<button class="btn-quiet btn btn-sm openSteps" type="button">ดูขั้นตอน</button>'+
+          '<span class="foot-right">'+
+            '<button type="button" class="menu-btn" aria-label="ย้ายโน้ต" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 12h.01M12 12h.01M18 12h.01"/></svg></button>'+
+            '<span class="drag-handle" title="ลากเพื่อสลับลำดับ"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg></span>'+
+          '</span>';
+      var menuHtml = paused ? '' :
+        '<div class="move-menu" hidden>'+
+          '<button type="button" data-move="top"'+(activeIdx===1?' disabled':'')+'>ทำเรื่องนี้ก่อน</button>'+
+          '<button type="button" data-move="-1"'+(activeIdx===1?' disabled':'')+'>ย้ายขึ้น</button>'+
+          '<button type="button" data-move="1"'+(activeIdx===activeTotal?' disabled':'')+'>ย้ายลง</button>'+
+        '</div>';
+      note.innerHTML =
+        '<div class="pin"></div>'+
+        '<div class="note-top-row"><span class="note-cat">'+escapeHtml(p.cat)+ephemeralTag(p)+'</span>'+rankBadge+'</div>'+
+        '<h3>'+escapeHtml(p.title)+'</h3>'+
+        '<div class="note-status"><div class="progress-track"><div class="progress-fill" style="width:'+pct(p)+'%"></div></div>'+done+'/'+p.steps.length+' ขั้นตอน</div>'+
+        '<div class="note-foot">'+footBtns+'</div>'+menuHtml;
+      surf.appendChild(note);
+      if(paused){
+        note.querySelector('.resumeBtn').addEventListener('click', function(){
+          p.status = p.steps.some(function(s){return s.done;}) ? 'active' : 'new';
+          toast('เอา "'+p.title+'" กลับมาทำต่อแล้วนะ');
+          renderBoard();
+        });
+      } else {
+        note.querySelector('.openSteps').addEventListener('click', function(){ openSteps(p.id); });
+        var handle = note.querySelector('.drag-handle');
+        handle.addEventListener('pointerdown', function(ev){ startDrag(ev, note); });
+        var menu = note.querySelector('.move-menu'), menuBtn = note.querySelector('.menu-btn');
+        menuBtn.addEventListener('click', function(){
+          menu.hidden = !menu.hidden;
+          menuBtn.setAttribute('aria-expanded', String(!menu.hidden));
+        });
+        $all('button', menu).forEach(function(b){
+          b.addEventListener('click', function(){
+            var m = b.dataset.move;
+            moveNote(p.id, m==='top' ? 'top' : +m);
+          });
+        });
+        attachLongPress(note);
+      }
+    });
+    if(activeTotal >= 1){
+      var less = el('button','btn btn-quiet focus-more','ย่อให้เหลือเรื่องเดียว');
+      less.type = 'button';
+      less.addEventListener('click', function(){ boardExpanded = false; renderBoard(); });
+      surf.appendChild(less);
+    }
+  }
+
+  function startDrag(ev, note){
+    ev.preventDefault();
+    var surf = $('#boardSurface');
+    var notes = $all('.note', surf);
+    var startY = ev.clientY;
+    var rect = note.getBoundingClientRect();
+    var before = state.order.slice();
+    function blockScroll(e){ e.preventDefault(); }
+    document.addEventListener('touchmove', blockScroll, {passive:false});
+    note.classList.add('dragging');
+    dragCtx = { note:note, offsetY: startY - rect.top };
+    function onMove(e){
+      var y = e.clientY - surf.getBoundingClientRect().top - dragCtx.offsetY;
+      note.style.position='relative'; note.style.top = (y - note.offsetTop + parseFloat(note.style.top||0)) + 'px';
+      var siblings = $all('.note', surf).filter(function(n){return n!==note;});
+      var midY = e.clientY;
+      for(var i=0;i<siblings.length;i++){
+        var r = siblings[i].getBoundingClientRect();
+        if(midY < r.top + r.height/2){
+          surf.insertBefore(note, siblings[i]); note.style.top='0px'; break;
+        } else if(i===siblings.length-1){
+          surf.appendChild(note); note.style.top='0px';
+        }
+      }
+    }
+    function onUp(){
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+      document.removeEventListener('touchmove', blockScroll);
+      note.classList.remove('dragging');
+      note.style.top='0px';
+      state.order = $all('.note', surf).map(function(n){return n.dataset.id;});
+      renderBoard();
+      if(state.order.join()!==before.join()){ toast('จัดลำดับใหม่แล้ว', undoOrderTo(before)); }
+    }
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+  }
+
+  /* ---- steps sheet ---- */
+  var currentSheetId = null;
+  var sheetShowAll = false;
+  var sheetEditing = false;
+  function openSteps(id){
+    currentSheetId = id;
+    sheetShowAll = false;
+    sheetEditing = false;
+    var p = state.problems.find(function(x){return x.id===id;});
+    $('#sheetCat').textContent = p.cat;
+    $('#sheetTitle').textContent = p.title;
+    renderSheetBody(p);
+    $('#sheetBackdrop').classList.add('open');
+    $('#stepsSheet').classList.add('open');
+  }
+  function stepRow(p, s){
+    var row = el('div','step-row');
+    row.innerHTML = '<button class="check'+(s.done?' done':'')+'" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg></button>'+
+      '<div class="step-text'+(s.done?' done':'')+'">'+escapeHtml(s.t)+'</div>';
+    row.querySelector('.check').addEventListener('click', function(){
+      s.done = !s.done;
+      var allDone = p.steps.every(function(x){return x.done;});
+      if(allDone && p.status!=='done'){ renderReflectPrompt(p); }
+      else{
+        renderSheetBody(p);
+        if(!allDone && p.status==='done'){ p.status='active'; }
+        else if(p.status==='new'){ p.status='active'; }
+      }
+    });
+    return row;
+  }
+
+  var REFLECT_LABELS = {1:'แย่ลง',2:'เหมือนเดิม',3:'ดีขึ้นบ้าง',4:'ดีขึ้นเยอะ'};
+  function reflectIconSvg(level){
+    var paths = {1:'M6 8l6 8 6-8',2:'M6 12h12',3:'M6 15l6-6 6 3',4:'M6 16l6-10 6 4'};
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="'+paths[level]+'"/></svg>';
+  }
+  function finalizeProblemDone(p){
+    p.status = 'done';
+    dissolveNote(p.id);
+  }
+  function renderReflectPrompt(p){
+    $('#sheetProgress').textContent = p.steps.length+'/'+p.steps.length+' ขั้นตอนแล้ว';
+    var body = $('#sheetBody'); body.innerHTML='';
+    var wrap = el('div','reflect-wrap');
+    var optsHtml = [1,2,3,4].map(function(lvl){
+      return '<button type="button" class="reflect-opt" data-level="'+lvl+'">'+reflectIconSvg(lvl)+'<span>'+REFLECT_LABELS[lvl]+'</span></button>';
+    }).join('');
+    wrap.innerHTML =
+      '<h4>ทำครบทุกขั้นตอนแล้ว!</h4>'+
+      '<div class="sub">ตอนนี้เรื่องนี้เป็นยังไงบ้าง?</div>'+
+      '<div class="reflect-options">'+optsHtml+'</div>'+
+      '<div class="reflect-picked" hidden></div>'+
+      '<div class="mood-note-wrap" hidden>'+
+        '<textarea class="mood-note" rows="1" placeholder="อยากเล่าเพิ่มไหม (ไม่บังคับ)"></textarea>'+
+        '<button type="button" class="round-btn send mood-note-send" aria-label="บันทึกโน้ต"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12 20 4l-6 16-3-7-7-1Z"/></svg></button>'+
+      '</div>'+
+      '<button type="button" class="text-link reflect-skip">ข้ามข้อนี้ ปิดปัญหาเลย</button>';
+    body.appendChild(wrap);
+
+    $all('.reflect-opt', wrap).forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var level = +btn.dataset.level;
+        $all('.reflect-opt', wrap).forEach(function(b){ b.classList.toggle('selected', b===btn); b.disabled=true; });
+        var picked = wrap.querySelector('.reflect-picked');
+        picked.hidden = false;
+        picked.textContent = 'บันทึกไว้แล้ว: '+REFLECT_LABELS[level];
+        wrap.querySelector('.reflect-skip').style.display = 'none';
+        p.reflection = {outcome:level};
+
+        var noteWrap = wrap.querySelector('.mood-note-wrap');
+        noteWrap.hidden = false;
+        var noteInput = noteWrap.querySelector('.mood-note');
+        var sendBtn = noteWrap.querySelector('.mood-note-send');
+        function saveNote(){
+          var note = noteInput.value.trim();
+          if(!note || noteInput.disabled) return;
+          if(!forgetOn){ p.reflection.note = note; }
+          noteInput.disabled = true; sendBtn.disabled = true;
+          toast(forgetOn ? 'บันทึกผลไว้แล้ว (โน้ตนี้จะถูกลืมเพราะเปิดโหมดคุยแล้วลืมอยู่)' : 'บันทึกโน้ตไว้แล้วนะ');
+        }
+        sendBtn.addEventListener('click', saveNote);
+        noteInput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); saveNote(); } });
+
+        var proceedBtn = el('button','btn btn-primary btn-sm','ปิดปัญหานี้เลย');
+        proceedBtn.type = 'button';
+        proceedBtn.style.marginTop = '14px';
+        proceedBtn.addEventListener('click', function(){ finalizeProblemDone(p); });
+        wrap.appendChild(proceedBtn);
+      });
+    });
+    wrap.querySelector('.reflect-skip').addEventListener('click', function(){ finalizeProblemDone(p); });
+  }
+
+  function pauseProblem(p){
+    p.status = 'paused';
+    closeSheet();
+    toast('ไม่เป็นไรเลย พักเรื่อง "'+p.title+'" ไว้ก่อนนะ กลับมาทำต่อเมื่อไหร่ก็ได้');
+    renderBoard();
+  }
+  function sheetIsOpenFor(p){ return $('#stepsSheet').classList.contains('open') && currentSheetId === p.id; }
+  function refreshAfterStepChange(p){
+    if(sheetIsOpenFor(p)) renderSheetBody(p);
+    renderBoard();
+  }
+  // "this step is too big": insert a smaller first step, keep the original as a later step
+  function shrinkNextStep(p){
+    var idx = p.steps.findIndex(function(s){ return !s.done; });
+    if(idx < 0) return false;
+    var cur = p.steps[idx];
+    var level = (cur.shrinkLevel || 0) + 1;
+    var small = LRE.shrinkStep(cur.t, level);
+    if(!small){ toast('ข้อนี้เล็กที่สุดแล้ว ถ้ายังไม่ไหว กด "ยังไม่พร้อมตอนนี้" ได้เลยนะ'); return false; }
+    var ns = { t:small, done:false, shrinkLevel:level };
+    p.steps.splice(idx, 0, ns);
+    refreshAfterStepChange(p);
+    toast('ย่อให้เล็กลงแล้ว', function(){
+      var i = p.steps.indexOf(ns);
+      if(i > -1) p.steps.splice(i, 1);
+      refreshAfterStepChange(p);
+    });
+    return true;
+  }
+  function addStepsFromLines(p, lines){
+    var room = 12 - p.steps.length;
+    var added = 0;
+    lines.forEach(function(t){
+      t = String(t).trim();
+      if(!t || room <= 0) return;
+      p.steps.push({ t:t.slice(0,120), done:false });
+      room--; added++;
+    });
+    return added;
+  }
+  function renderStepEditor(p){
+    $('#sheetProgress').textContent = 'กำลังแก้ไขขั้นตอน';
+    var body = $('#sheetBody'); body.innerHTML = '';
+    p.steps.forEach(function(s, i){
+      var row = el('div','edit-row');
+      var inp = el('input'); inp.type = 'text'; inp.value = s.t; inp.maxLength = 120;
+      inp.setAttribute('aria-label', 'ขั้นตอนที่ '+(i+1));
+      inp.addEventListener('change', function(){ var v = inp.value.trim(); if(v){ s.t = v; } else { inp.value = s.t; } });
+      var del = el('button','text-link','ลบ'); del.type = 'button';
+      del.setAttribute('aria-label', 'ลบขั้นตอนที่ '+(i+1));
+      del.addEventListener('click', function(){
+        var removed = p.steps.splice(i, 1)[0];
+        renderStepEditor(p);
+        toast('ลบขั้นตอนแล้ว', function(){ p.steps.splice(i, 0, removed); if(sheetEditing) renderStepEditor(p); });
+      });
+      row.appendChild(inp); row.appendChild(del); body.appendChild(row);
+    });
+    var addRow = el('div','edit-row');
+    var ni = el('input'); ni.type = 'text'; ni.maxLength = 120; ni.placeholder = 'เพิ่มขั้นตอนเล็กๆ';
+    ni.setAttribute('aria-label', 'เพิ่มขั้นตอนใหม่');
+    var nb = el('button','btn btn-quiet btn-sm','เพิ่ม'); nb.type = 'button';
+    function doAdd(){
+      if(p.steps.length >= 12){ toast('ใส่ได้สูงสุด 12 ขั้นตอนต่อเรื่อง'); return; }
+      if(addStepsFromLines(p, [ni.value])){ renderStepEditor(p); }
+    }
+    nb.addEventListener('click', doAdd);
+    ni.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); doAdd(); } });
+    addRow.appendChild(ni); addRow.appendChild(nb); body.appendChild(addRow);
+    var fin = el('button','btn btn-primary btn-sm','เสร็จการแก้ไข'); fin.type = 'button'; fin.style.marginTop = '14px';
+    fin.addEventListener('click', function(){ sheetEditing = false; renderSheetBody(p); renderBoard(); });
+    body.appendChild(fin);
+  }
+  function renderSheetBody(p){
+    if(sheetEditing){ renderStepEditor(p); return; }
+    var done = p.steps.filter(function(s){return s.done;}).length;
+    var total = p.steps.length;
+    var nextIdx = p.steps.findIndex(function(s){ return !s.done; });
+    if(total > 0 && nextIdx === -1 && p.status !== 'done'){ renderReflectPrompt(p); return; }
+    $('#sheetProgress').textContent = done+'/'+total+' ขั้นตอนแล้ว';
+    var body = $('#sheetBody'); body.innerHTML='';
+
+    if(total === 0){
+      var empty = el('div','hist-meta','ยังไม่มีขั้นตอน — เพิ่มเองหรือให้พี่เสก โซโลแนะนำขั้นตอนเริ่มต้นได้');
+      empty.style.marginBottom = '10px';
+      body.appendChild(empty);
+      var sug = el('button','btn btn-quiet btn-sm','ให้พี่เสก โซโลแนะนำขั้นตอนเริ่มต้น'); sug.type = 'button';
+      sug.addEventListener('click', function(){ addStepsFromLines(p, LRE.starterSteps(p.cat)); refreshAfterStepChange(p); });
+      body.appendChild(sug);
+    } else if(sheetShowAll || total<=1){
+      p.steps.forEach(function(s){ body.appendChild(stepRow(p, s)); });
+      if(total>1){
+        var collapse = el('button','text-link', 'ย่อกลับไปทีละข้อ');
+        collapse.type='button';
+        collapse.style.marginTop='4px';
+        collapse.addEventListener('click', function(){ sheetShowAll=false; renderSheetBody(p); });
+        body.appendChild(collapse);
+      }
+    } else {
+      var counter = el('div','hist-meta', 'ข้อ '+(nextIdx+1)+' จาก '+total);
+      counter.style.marginBottom='8px';
+      body.appendChild(counter);
+      body.appendChild(stepRow(p, p.steps[nextIdx]));
+      var seeAll = el('button','text-link', 'ดูทั้งหมด ('+total+' ขั้นตอน)');
+      seeAll.type='button';
+      seeAll.style.marginTop='10px';
+      seeAll.addEventListener('click', function(){ sheetShowAll=true; renderSheetBody(p); });
+      body.appendChild(seeAll);
+    }
+
+    if(nextIdx !== -1){
+      var shrink = el('button','text-link shrink-link','ข้อนี้ใหญ่เกินไป ช่วยย่อให้หน่อย'); shrink.type = 'button';
+      shrink.addEventListener('click', function(){ shrinkNextStep(p); });
+      body.appendChild(shrink);
+    }
+    var editLink = el('button','text-link shrink-link','แก้ไขขั้นตอน'); editLink.type = 'button';
+    editLink.addEventListener('click', function(){ sheetEditing = true; renderSheetBody(p); });
+    body.appendChild(editLink);
+
+    if(p.status!=='done' && p.status!=='paused'){
+      var pauseBtn = el('button','btn btn-ghost btn-sm', 'ยังไม่พร้อมสำหรับเรื่องนี้ตอนนี้');
+      pauseBtn.type='button';
+      pauseBtn.style.marginTop='18px';
+      pauseBtn.addEventListener('click', function(){ pauseProblem(p); });
+      body.appendChild(pauseBtn);
+    }
+  }
+  function closeSheet(){ $('#sheetBackdrop').classList.remove('open'); $('#stepsSheet').classList.remove('open'); }
+  $('#sheetBackdrop').addEventListener('click', closeSheet);
+
+  function dissolveNote(id){
+    var n = $('.note[data-id="'+id+'"]');
+    setTimeout(function(){
+      closeSheet();
+      toast('เยี่ยมมาก! ปัญหานี้แก้ไขแล้ว ย้ายไปที่ประวัติให้แล้วนะ');
+      state.order = state.order.filter(function(x){return x!==id;});
+      renderBoard();
+    }, 250);
+    if(n){ n.classList.add('dissolving'); }
+  }
+
+  /* ================= HISTORY ================= */
+  var WEEKDAY_TH = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  function renderMoodStrip(){
+    var days = recentHistory(state.moodHistory, 7);
+    var strip = el('div','mood-strip-card');
+    var rowHtml = days.map(function(d){
+      var dObj = new Date(d.date+'T00:00:00');
+      var label = WEEKDAY_TH[dObj.getDay()];
+      var body = d.entry ? moodIconSvg(d.entry.level) : '<span class="mood-strip-blank">–</span>';
+      return '<div class="mood-strip-day'+(d.entry?'':' empty')+'">'+body+'<b>'+label+'</b></div>';
+    }).join('');
+    strip.innerHTML = '<h2>อารมณ์ 7 วันล่าสุด</h2><div class="mood-strip-row">'+rowHtml+'</div>';
+    return strip;
+  }
+
+  function renderCalmTrend(){
+    var rows = engine.allSessions().filter(function(s){ return s.calmBefore!=null || s.calmAfter!=null; }).slice(-5);
+    if(!rows.length) return null;
+    var card = el('div','mood-strip-card');
+    card.innerHTML = '<h2>ความสงบก่อน–หลังคุย</h2><div class="calm-trend">' + rows.map(function(s){
+      return '<span class="chip">ก่อน '+(s.calmBefore!=null?s.calmBefore:'–')+' → หลัง '+(s.calmAfter!=null?s.calmAfter:'–')+'</span>';
+    }).join('') + '</div>';
+    return card;
+  }
+
+  function renderHistory(){
+    var list = $('#historyList'); list.innerHTML='';
+    list.appendChild(renderMoodStrip());
+    var calmCard = renderCalmTrend();
+    if(calmCard) list.appendChild(calmCard);
+    var ids = state.order.concat(state.problems.filter(function(p){return state.order.indexOf(p.id)===-1;}).map(function(p){return p.id;}));
+    state.problems.slice().sort(function(a,b){
+      var order = {active:0, new:1, paused:2, done:3};
+      return order[a.status]-order[b.status];
+    }).forEach(function(p){
+      var done = p.steps.filter(function(s){return s.done;}).length;
+      var g = el('div','hist-group');
+      var doneSnip = 'จบบทสนทนาแล้ว พี่เสก โซโลดีใจด้วยนะที่ผ่านเรื่องนี้มาได้';
+      if(p.status==='done' && p.reflection){
+        doneSnip = 'ผลลัพธ์: '+REFLECT_LABELS[p.reflection.outcome]+(p.reflection.note ? ' — "'+escapeHtml(p.reflection.note)+'"' : '');
+      }
+      var snip = p.status==='done' ? doneSnip
+        : (p.status==='paused' ? 'พักเรื่องนี้ไว้ก่อน ไม่เป็นไรเลย กลับมาทำต่อเมื่อไหร่ก็ได้'
+        : 'คุยกับพี่เสก โซโลล่าสุดเรื่องนี้ — แตะเพื่อดูขั้นตอนต่อ');
+      g.innerHTML = '<div class="hist-top"><div><h3>'+escapeHtml(p.title)+'</h3><div class="hist-meta">'+escapeHtml(p.cat)+ephemeralTag(p)+' · '+done+'/'+p.steps.length+' ขั้นตอน</div></div>'+
+        '<span class="status-pill '+p.status+'">'+statusLabel(p.status)+'</span></div>'+
+        '<div class="hist-snip">'+snip+'</div>'+
+        '<div style="display:flex;justify-content:flex-end;"><button class="text-link hist-del" type="button">ลบ</button></div>';
+      g.querySelector('.hist-del').addEventListener('click', function(ev){ ev.stopPropagation(); deleteProblem(p.id); });
+      g.addEventListener('click', function(){ if(p.status!=='done'){ goTo('board'); setTimeout(function(){openSteps(p.id);}, 260);} });
+      list.appendChild(g);
+    });
+    if(!state.problems.length){ list.appendChild(el('div','empty-hint','ยังไม่มีประวัติ')); }
+  }
+
+  /* ================= SETTINGS ================= */
+  var forgetOn = false;
+  $('#forgetSwitch').addEventListener('click', function(){
+    forgetOn = !forgetOn;
+    this.classList.toggle('on', forgetOn);
+    this.setAttribute('aria-pressed', String(forgetOn));
+    toast(forgetOn ? 'เปิดโหมดคุยแล้วลืมแล้ว เรื่องที่จับจากการคุยจากนี้จะไม่ถูกบันทึก' : 'ปิดโหมดคุยแล้วลืมแล้ว');
+  });
+  $('#downloadDataBtn').addEventListener('click', openDataModal);
+  $('#deleteAllBtn').addEventListener('click', function(){
+    confirmDialog({
+      title: 'ลบประวัติทั้งหมด?',
+      msg: 'เรื่องบนกระดาน ประวัติอารมณ์ และคะแนนความสงบทั้งหมดจะถูกลบออกจากเครื่องนี้ ยกเลิกไม่ได้',
+      ok: 'ลบทั้งหมด'
+    }, function(){
+      state.problems = []; state.order = []; state.moodHistory = []; state.todayMoodLevel = null;
+      engine.completed = []; engine.session = null; engine.pending = { calmBefore:null, exercise:null };
+      if(storageOk){ try{ localStorage.removeItem(STORE_KEY); }catch(e){} }
+      lastSaved = '';
+      refreshSessionBar(); renderBoard(); renderHistory();
+      toast('ลบประวัติทั้งหมดแล้ว (โควตาเดือนนี้ยังนับต่อ)');
+    });
+  });
+  $('#previewSafetyBtn').addEventListener('click', function(){ goTo('chat'); setTimeout(addSafetyCard, 200); });
+  $('#loadSampleBtn').addEventListener('click', loadSampleData);
+
+  /* ================= CONFIRM / ADD-EDIT PROBLEM / DELETE / DATA VIEW ================= */
+  var confirmCb = null;
+  function confirmDialog(opts, onOk){
+    $('#confirmTitle').textContent = opts.title;
+    $('#confirmMsg').textContent = opts.msg;
+    $('#confirmOk').textContent = opts.ok || 'ตกลง';
+    confirmCb = onOk;
+    $('#confirmModalBackdrop').classList.add('open');
+  }
+  function closeConfirm(){ $('#confirmModalBackdrop').classList.remove('open'); confirmCb = null; }
+  $('#confirmOk').addEventListener('click', function(){ var cb = confirmCb; closeConfirm(); if(cb) cb(); });
+  $('#confirmCancel').addEventListener('click', closeConfirm);
+  $('#confirmModalBackdrop').addEventListener('click', function(e){ if(e.target===this) closeConfirm(); });
+
+  var pmEditingId = null;
+  (function fillCategories(){
+    var sel = $('#pmCat');
+    LRE.categories().forEach(function(c){ var o = el('option', null, escapeHtml(c)); o.value = c; sel.appendChild(o); });
+  })();
+  function pmError(msg){ var e = $('#pmErr'); e.hidden = !msg; e.textContent = msg || ''; }
+  function openProblemModal(mode, p){
+    pmEditingId = mode === 'edit' ? p.id : null;
+    $('#problemModalTitle').textContent = mode === 'edit' ? 'เปลี่ยนชื่อ / หมวด' : 'เพิ่มเรื่องที่หนักใจ';
+    $('#pmTitle').value = mode === 'edit' ? p.title : '';
+    $('#pmCat').value = mode === 'edit' ? p.cat : 'อื่นๆ';
+    if(mode === 'edit' && LRE.categories().indexOf(p.cat) < 0){ $('#pmCat').value = 'อื่นๆ'; }
+    $('#pmSteps').value = '';
+    $('#pmStepsWrap').hidden = mode === 'edit';
+    pmError('');
+    $('#problemModalBackdrop').classList.add('open');
+    $('#pmTitle').focus();
+  }
+  function closeProblemModal(){ $('#problemModalBackdrop').classList.remove('open'); }
+  $('#pmCancel').addEventListener('click', closeProblemModal);
+  $('#problemModalBackdrop').addEventListener('click', function(e){ if(e.target===this) closeProblemModal(); });
+  $('#pmSave').addEventListener('click', function(){
+    var title = $('#pmTitle').value.trim();
+    if(!title){ pmError('ใส่ชื่อเรื่องก่อนนะ สั้นๆ ก็ได้'); return; }
+    var cat = $('#pmCat').value || 'อื่นๆ';
+    if(pmEditingId){
+      var p = state.problems.find(function(x){ return x.id === pmEditingId; });
+      if(p){
+        p.title = title; p.cat = cat;
+        $('#sheetTitle').textContent = p.title; $('#sheetCat').textContent = p.cat;
+        toast('แก้ไขแล้ว');
+      }
+    } else {
+      var np = {
+        id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+        title: title, cat: cat, urgency: 3, status: 'new', steps: []
+      };
+      addStepsFromLines(np, $('#pmSteps').value.split('\n'));
+      state.problems.push(np);
+      state.order.push(np.id);
+      toast(state.order.filter(isActiveId)[0] === np.id ? 'เพิ่มเรื่องแล้ว' : 'เพิ่มเรื่องแล้ว ดูได้ที่ "ดูเรื่องอื่นทั้งหมด"');
+    }
+    closeProblemModal();
+    renderBoard();
+    if(screens.history.classList.contains('active')) renderHistory();
+  });
+  $('#addProblemBtn').addEventListener('click', function(){ openProblemModal('add'); });
+  $('#sheetRename').addEventListener('click', function(){
+    var p = state.problems.find(function(x){ return x.id === currentSheetId; });
+    if(p) openProblemModal('edit', p);
+  });
+  $('#sheetDelete').addEventListener('click', function(){ if(currentSheetId) deleteProblem(currentSheetId); });
+
+  function deleteProblem(id){
+    var p = state.problems.find(function(x){ return x.id === id; });
+    if(!p) return;
+    confirmDialog({
+      title: 'ลบเรื่องนี้?',
+      msg: '"' + p.title + '" และขั้นตอนทั้งหมดจะถูกลบออกจากเครื่องนี้',
+      ok: 'ลบ'
+    }, function(){
+      var pi = state.problems.indexOf(p);
+      var oi = state.order.indexOf(id);
+      state.problems.splice(pi, 1);
+      state.order = state.order.filter(function(x){ return x !== id; });
+      closeSheet();
+      renderBoard();
+      if(screens.history.classList.contains('active')) renderHistory();
+      toast('ลบเรื่องแล้ว', function(){
+        state.problems.splice(Math.min(pi, state.problems.length), 0, p);
+        if(oi > -1) state.order.splice(Math.min(oi, state.order.length), 0, id);
+        renderBoard();
+        if(screens.history.classList.contains('active')) renderHistory();
+      });
+    });
+  }
+
+  function openDataModal(){
+    var data = {
+      exportedAt: new Date().toISOString(),
+      problems: state.problems.filter(function(p){ return !p.ephemeral; }),
+      moodHistory: state.moodHistory.filter(function(e){ return !e.sample; }),
+      sessions: engine.allSessions()
+    };
+    $('#dataText').value = JSON.stringify(data, null, 2);
+    $('#dataModalBackdrop').classList.add('open');
+  }
+  $('#dataClose').addEventListener('click', function(){ $('#dataModalBackdrop').classList.remove('open'); });
+  $('#dataModalBackdrop').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
+  $('#dataCopy').addEventListener('click', function(){
+    var ta = $('#dataText');
+    function fallback(){
+      ta.focus(); ta.select();
+      var ok = false;
+      try{ ok = document.execCommand('copy'); }catch(e){}
+      toast(ok ? 'คัดลอกแล้ว' : 'คัดลอกอัตโนมัติไม่ได้ ลองเลือกข้อความแล้วคัดลอกเองนะ');
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ta.value).then(function(){ toast('คัดลอกแล้ว'); }, fallback);
+    } else { fallback(); }
+  });
+
+  function updateStorageNote(){
+    $('#storageNote').textContent = storageOk
+      ? 'บันทึกอัตโนมัติในเครื่องนี้ ปิดแล้วเปิดใหม่ข้อมูลยังอยู่'
+      : 'เบราว์เซอร์นี้ไม่อนุญาตให้บันทึก ข้อมูลจะหายเมื่อปิดหรือรีโหลดหน้านี้';
+  }
+
+  /* ================= USAGE (counts Sessions; never interrupts one in progress) ================= */
+  function renderUsage(){
+    $('#usageLabel').textContent = engine.usage.used+'/'+engine.usage.limit;
+    $('#usageDesc').textContent = 'คุณใช้ไป '+engine.usage.used+' จาก '+engine.usage.limit+' เซสชันในเดือนนี้ โควตาจะรีเซ็ตใหม่ทุกเดือน';
+    var meter = $('#usageMeter'); meter.innerHTML='';
+    for(var i=0;i<engine.usage.limit;i++){ meter.appendChild(el('i', i<engine.usage.used?'used':'')); }
+  }
+  function openUsage(blocked){
+    renderUsage();
+    if(blocked){
+      $('#usageDesc').textContent = 'ครบโควตาเดือนนี้แล้ว จึงยังเริ่มการคุยครั้งใหม่ไม่ได้ แต่ยังอ่านประวัติ ทำแบบฝึกหายใจ และขอความช่วยเหลือฉุกเฉินได้เสมอ ข้อมูลของคุณอยู่ในเครื่องนี้ ถ้าอยากให้ตามไปทุกเครื่องต้องมีบัญชี ซึ่งยังไม่เปิดให้สมัครในเวอร์ชันทดลองนี้';
+    }
+    $('#usageModalBackdrop').classList.add('open');
+  }
+  function closeUsage(){ $('#usageModalBackdrop').classList.remove('open'); }
+  $('#closeUsageBtn').addEventListener('click', closeUsage);
+  $('#usageModalBackdrop').addEventListener('click', function(e){ if(e.target===this) closeUsage(); });
+  $('#upgradeBtn').addEventListener('click', function(){ toast('ตัวอย่างเท่านั้น — ยังไม่เชื่อมระบบชำระเงินจริงในดีโม่นี้'); });
+  $('#priorityCancel').addEventListener('click', closePriorityModal);
+  $('#priorityModalBackdrop').addEventListener('click', function(e){ if(e.target===this) closePriorityModal(); });
+
+  /* ================= GROUNDING EXERCISE (always skippable) ================= */
+  var exTimer = null, exState = null;
+  function openExercise(kind){
+    $('#exercise').hidden = false;
+    exState = { kind:kind, done:false };
+    if(kind==='breath') runBreath(); else run54321();
+  }
+  function closeExercise(){
+    clearInterval(exTimer); exTimer = null;
+    if(exState){ engine.recordExercise(exState.kind, exState.done); }
+    exState = null;
+    $('#exercise').hidden = true;
+    var inp = $('#msgInput'); if(inp) inp.focus();
+  }
+  function exerciseDone(){
+    clearInterval(exTimer); exTimer = null;
+    exState.done = true;
+    $('#exerciseBody').innerHTML = '<h2>ทำได้ดีมาก</h2><p>พร้อมแล้วค่อยเล่าให้ฟังนะ หรือจะเล่าทีหลังก็ได้</p><button class="btn btn-primary" id="exDone" type="button">กลับไปคุย</button>';
+    $('#exDone').addEventListener('click', closeExercise);
+    $('#exerciseSkip').style.display = 'none';
+  }
+  function runBreath(){
+    $('#exerciseSkip').style.display = '';
+    $('#exerciseBody').innerHTML = '<h2>หายใจไปด้วยกัน</h2><p>ไม่ต้องทำให้ถูก แค่ตามจังหวะวงกลม หยุดตอนไหนก็ได้</p><div class="breath-circle" aria-hidden="true"></div><div class="count" id="exCount">เหลือ 60 วินาที</div><div id="exLabel" aria-live="polite">หายใจเข้า…</div>';
+    var t = 0;
+    exTimer = setInterval(function(){
+      t++;
+      if(t>=60){ exerciseDone(); return; }
+      $('#exCount').textContent = 'เหลือ '+(60-t)+' วินาที';
+      $('#exLabel').textContent = (t%10)<4 ? 'หายใจเข้า…' : 'ผ่อนลมหายใจออก…';
+    }, 1000);
+  }
+  var STEPS_54321 = ['มองรอบๆ แล้วหาสิ่งที่เห็น 5 อย่าง','หาสิ่งที่สัมผัสได้ 4 อย่าง เช่น เสื้อ เก้าอี้ พื้น','ฟังเสียงรอบตัวสัก 3 เสียง','หากลิ่นที่ได้กลิ่นสัก 2 อย่าง','สังเกตรสในปากสัก 1 อย่าง'];
+  function run54321(){
+    $('#exerciseSkip').style.display = '';
+    var i = 0;
+    function show(){
+      $('#exerciseBody').innerHTML = '<h2>5-4-3-2-1</h2><div class="count">ข้อ '+(i+1)+' จาก '+STEPS_54321.length+'</div><div class="exercise-step">'+escapeHtml(STEPS_54321[i])+'</div><button class="btn btn-primary" id="exNext" type="button">'+(i===STEPS_54321.length-1?'เสร็จแล้ว':'ถัดไป')+'</button>';
+      $('#exNext').addEventListener('click', function(){ if(i===STEPS_54321.length-1){ exerciseDone(); } else { i++; show(); } });
+    }
+    show();
+  }
+  $('#exerciseSkip').addEventListener('click', closeExercise);
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !$('#exercise').hidden){ closeExercise(); } });
+
+  /* ================= WIZARD-OF-OZ ================= */
+  var WIZARD_CHANNEL = 'lr-wizard';
+  var operatorAdapter = null, wizardOn = false;
+  var wizardDefaultDesc = $('#wizardDesc').textContent;
+  function updateWizardStatus(){
+    $('#wizardDesc').textContent = !wizardOn ? wizardDefaultDesc
+      : (operatorAdapter && operatorAdapter.isOperatorPresent()
+          ? 'ผู้ดำเนินการเชื่อมต่อแล้ว — สิ่งที่คุณพิมพ์จะถูกส่งให้เขาตอบ'
+          : 'ยังไม่พบคอนโซลผู้ดำเนินการ — ถ้าไม่มีคนตอบ ระบบจะตอบแทนอัตโนมัติ');
+  }
+  function setWizardMode(on){
+    if(on && typeof BroadcastChannel==='undefined'){ toast('เบราว์เซอร์นี้ไม่รองรับโหมดผู้ดำเนินการ'); return; }
+    wizardOn = on;
+    if(on && !operatorAdapter){
+      operatorAdapter = LRE.createOperatorAdapter(new BroadcastChannel(WIZARD_CHANNEL), scriptedAdapter, {
+        timeoutMs:45000, onPush:applyPayload, onPresence:updateWizardStatus
+      });
+    }
+    engine.adapter = on ? operatorAdapter : scriptedAdapter;
+    $('#wizardSwitch').classList.toggle('on', on);
+    $('#wizardSwitch').setAttribute('aria-pressed', String(on));
+    if(on) operatorAdapter.ping();
+    updateWizardStatus();
+  }
+  $('#wizardSwitch').addEventListener('click', function(){ setWizardMode(!wizardOn); });
+
+  var opChannel = null, opLastId = null, opPending = [];
+  var OP_QUICK = ['ฟังอยู่นะ เล่าต่อได้เลย','ได้ยินว่าตอนนี้หนักมากเลย','ถ้าเลือกได้ เรื่องไหนหนักที่สุดตอนนี้','ลองหายใจลึกๆ ด้วยกันสักครั้งไหม','ขอบคุณที่เล่าให้ฟังนะ'];
+  function opLog(who, text){
+    var d = el('div','op-msg'+(who==='me'?' me':'')); d.textContent = text;
+    $('#opLog').appendChild(d);
+    $('#opLog').scrollTop = $('#opLog').scrollHeight;
+  }
+  function opShowCtx(d){
+    var s = d.session || {}, ctx = d.context || {};
+    var titles = (ctx.problems || []).map(function(p){ return p.title+' ('+p.status+')'; }).join(', ') || 'ยังไม่มี';
+    $('#opCtx').textContent = 'เซสชัน '+(s.turns||0)+' ข้อความ · Calm ก่อน '+(s.calmBefore!=null?s.calmBefore:'–')+' หลัง '+(s.calmAfter!=null?s.calmAfter:'–')+' · อารมณ์วันนี้ '+(ctx.moodLevel!=null?MOOD_LABELS[ctx.moodLevel]:'–')+' · ปัญหาบนกระดาน: '+titles;
+  }
+  function enterOperator(){
+    if(typeof BroadcastChannel==='undefined'){ toast('เบราว์เซอร์นี้ไม่รองรับโหมดผู้ดำเนินการ'); return; }
+    document.documentElement.classList.add('operator-mode');
+    $('#operator').hidden = false;
+    if(!opChannel){
+      opChannel = new BroadcastChannel(WIZARD_CHANNEL);
+      opChannel.onmessage = function(m){
+        var d = m.data; if(!d) return;
+        if(d.type==='ping'){ opChannel.postMessage({type:'hello'}); $('#opStatus').textContent = 'เชื่อมต่อผู้ใช้แล้ว'; }
+        else if(d.type==='turn'){ opLastId = d.id; opLog('them', d.text); opShowCtx(d); $('#opStatus').textContent = 'เชื่อมต่อผู้ใช้แล้ว'; }
+      };
+      OP_QUICK.forEach(function(q){
+        var b = el('button', null, q); b.type = 'button';
+        b.addEventListener('click', function(){ var t = $('#opReply'); t.value = (t.value ? t.value+' ' : '') + q; t.focus(); });
+        $('#opQuick').appendChild(b);
+      });
+    }
+    opChannel.postMessage({type:'hello'});
+  }
+  function exitOperator(){
+    document.documentElement.classList.remove('operator-mode');
+    $('#operator').hidden = true;
+  }
+  function opRenderPending(){
+    $('#opPending').textContent = opPending.length ? 'จะส่งไปด้วย: '+opPending.map(function(p){ return p.title; }).join(', ') : '';
+  }
+  $('#opAddProb').addEventListener('click', function(){
+    var title = $('#opProbTitle').value.trim();
+    if(!title) return;
+    opPending.push({
+      title:title, cat:$('#opProbCat').value,
+      steps:$('#opProbSteps').value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean)
+    });
+    $('#opProbTitle').value = ''; $('#opProbSteps').value = '';
+    opRenderPending();
+  });
+  $('#opSend').addEventListener('click', function(){
+    var reply = $('#opReply').value.trim();
+    var askPriority = $('#opAskPriority').checked, askCalm = $('#opAskCalm').checked, safety = $('#opSafety').checked;
+    if(!reply && !opPending.length && !askPriority && !askCalm && !safety) return;
+    opChannel.postMessage({
+      type:'reply', id:opLastId, reply:reply, problems:opPending,
+      askPriority:askPriority, askCalmAfter:askCalm, safety:safety
+    });
+    opLog('me', reply || '(ส่งการ์ด/ปัญหาโดยไม่มีข้อความ)');
+    opLastId = null; opPending = []; opRenderPending();
+    $('#opReply').value = '';
+    $('#opAskPriority').checked = false; $('#opAskCalm').checked = false; $('#opSafety').checked = false;
+  });
+  $('#openOperatorBtn').addEventListener('click', enterOperator);
+  $('#opExit').addEventListener('click', exitOperator);
+
+  /* ================= DEMO RESET ================= */
+  $('#demoReset').addEventListener('click', function(){
+    safeLocal(function(){ localStorage.removeItem('lr_seen_onboarding'); });
+    location.reload();
+  });
+
+  /* ================= init ================= */
+  $('#decideForMeBtn').addEventListener('click', decideForMe);
+
+  /* ================= COLOR THEME ================= */
+  document.documentElement.setAttribute('data-color-theme', 'mint');
+  $all('.theme-swatch').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var val = btn.dataset.colorTheme;
+      if(val){ document.documentElement.setAttribute('data-color-theme', val); }
+      else { document.documentElement.removeAttribute('data-color-theme'); }
+      $all('.theme-swatch').forEach(function(b){ b.classList.toggle('active', b===btn); });
+    });
+  });
+  if(restoredTheme === 'warm'){
+    document.documentElement.removeAttribute('data-color-theme');
+    $all('.theme-swatch').forEach(function(b){ b.classList.toggle('active', b.dataset.colorTheme === ''); });
+  }
+  updateStorageNote();
+  refreshSessionBar();
+  setInterval(saveNow, 1500);
+  window.addEventListener('pagehide', saveNow);
+  document.addEventListener('visibilitychange', function(){ if(document.hidden) saveNow(); });
+  renderUsage();
+  renderBoard();
+  var qs = new URLSearchParams(location.search);
+  if(qs.get('wizard')==='1') setWizardMode(true);
+  if(qs.get('operator')==='1') enterOperator();
+  if($('#onboarding').style.display==='none'){ renderChatIntro(); }
+})();
+</script>
+</body>
+</html>
